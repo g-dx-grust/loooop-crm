@@ -1,0 +1,27 @@
+{
+  "name": "looop-crm",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "start": "pnpm --filter web start",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "db:generate": "pnpm --filter @looop/db generate",
+    "db:migrate": "pnpm --filter @looop/db migrate",
+    "db:studio": "pnpm --filter @looop/db studio",
+    "seed": "pnpm --filter @looop/db seed"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "prettier": "3.3.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3"]
+  }
+}

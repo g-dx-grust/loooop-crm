@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Looopでんき顧客管理システム 操作マニュアル</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 13mm;
+    }
+
+    :root {
+      color-scheme: light;
+      --text: #1d2129;
+      --muted: #667085;
+      --light: #f6f8fb;
+      --line: #d9dee7;
+      --brand: #3370ff;
+      --brand-soft: #edf3ff;
+      --warning: #fff7ec;
+      --warning-line: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #eef2f7;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Yu Gothic UI", Meiryo, sans-serif;
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .page {
+      width: min(1080px, calc(100% - 32px));
+      margin: 24px auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      box-shadow: 0 16px 40px rgba(29, 33, 41, 0.08);
+    }
+
+    header {
+      padding: 44px 48px 34px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    main {
+      padding: 34px 48px 48px;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: 30px;
+      font-weight: 750;
+    }
+
+    h2 {
+      margin-top: 42px;
+      padding-top: 10px;
+      border-top: 2px solid var(--brand);
+      font-size: 22px;
+      font-weight: 730;
+    }
+
+    h3 {
+      margin-top: 26px;
+      font-size: 17px;
+      font-weight: 720;
+    }
+
+    p {
+      margin: 10px 0 0;
+    }
+
+    a {
+      color: var(--brand);
+      text-decoration: none;
+    }
+
+    ul, ol {
+      margin: 10px 0 0;
+      padding-left: 1.3em;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 12px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--light);
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 22px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 10px;
+      border: 1px solid #cdd8ff;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .toc {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--light);
+    }
+
+    .toc a {
+      display: block;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      font-weight: 650;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .step {
+      min-height: 86px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--brand);
+      font-size: 13px;
+    }
+
+    .note {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-left: 4px solid var(--brand);
+      background: var(--brand-soft);
+    }
+
+    .warning {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-left: 4px solid var(--warning-line);
+      background: var(--warning);
+    }
+
+    figure {
+      margin: 18px 0 28px;
+      break-inside: avoid;
+    }
+
+    figcaption {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .mobile-shot {
+      width: 390px;
+      max-width: 100%;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+
+    .page-break {
+      break-before: page;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page {
+        width: auto;
+        margin: 0;
+        border: 0;
+        box-shadow: none;
+      }
+
+      header, main {
+        padding-left: 0;
+        padding-right: 0;
+      }
+
+      h2 {
+        break-after: avoid;
+      }
+
+      img {
+        max-height: 178mm;
+        object-fit: contain;
+      }
+
+      .no-print {
+        display: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: 100%;
+        margin: 0;
+        border: 0;
+      }
+
+      header, main {
+        padding: 24px 18px;
+      }
+
+      .toc, .flow, .two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <article class="page">
+    <header>
+      <h1>Looopでんき顧客管理システム<br>操作マニュアル</h1>
+      <p class="lead">
+        催事現場での新規登録から、Looop申込ステータスの更新、顧客フォロー、太陽光連携CSV出力までを、ユーザー操作の流れに沿ってまとめたマニュアルです。
+      </p>
+      <div class="meta">
+        <span class="pill">対象: 催事スタッフ</span>
+        <span class="pill">対象: 管理者・マネージャー</span>
+        <span class="pill">対象: 太陽光連携担当</span>
+        <span class="pill">作成日: 2026年5月11日</span>
+      </div>
+    </header>
+
+    <main>
+      <section id="overview">
+        <h2>1. まず覚える全体の流れ</h2>
+        <p>
+          基本は「登録する」「確認する」「更新する」「必要に応じて出力する」の順番です。迷ったときは、左側メニューから目的の画面へ移動してください。
+        </p>
+        <div class="flow">
+          <div class="step"><strong>1. 催事フォーム</strong>現場でお客様情報、住所、Looopでんき状況、同意を登録します。</div>
+          <div class="step"><strong>2. 顧客一覧</strong>登録済み顧客を検索し、担当者・会場・ステータスで絞り込みます。</div>
+          <div class="step"><strong>3. Looop申込</strong>申込状況、売上計上月、入金状況を確認し、ステータスを更新します。</div>
+          <div class="step"><strong>4. 太陽光連携</strong>同意取得済み・ピン確認済みの顧客を選び、CSVを出力します。</div>
+        </div>
+
+        <div class="toc">
+          <a href="#intake">2. 催事フォームで新規登録する</a>
+          <a href="#customers">3. 顧客一覧で探す・絞り込む</a>
+          <a href="#detail">4. 顧客詳細で確認する</a>
+          <a href="#looop">5. Looop申込を管理する</a>
+          <a href="#solar">6. 太陽光連携CSVを出力する</a>
+          <a href="#rules">7. 運用ルール・注意点</a>
+        </div>
+      </section>
+
+      <section id="intake" class="page-break">
+        <h2>2. 催事フォームで新規登録する</h2>
+        <p>
+          左メニューの「催事フォーム」を開きます。スマホ・タブレットでの入力を想定した5ステップ形式です。各ステップで必要事項を入力し、「次へ」で進みます。
+        </p>
+
+        <h3>2-1. 基本情報を入力する</h3>
+        <p>
+          お客様名と電話番号は必須です。電話番号は半角数字で入力します。電話番号が既に登録されている場合は警告が表示されるため、重複登録に注意してください。
+        </p>
+        <figure>
+          <img class="mobile-shot" src="assets/08-intake-step1.png" alt="催事フォームの基本情報入力画面">
+          <figcaption>催事フォーム: 基本情報。氏名、フリガナ、電話番号、年齢層、世帯構成、連絡希望時間を入力します。</figcaption>
+        </figure>
+
+        <h3>2-2. 住所と地図ピンを確認する</h3>
+        <p>
+          郵便番号、都道府県、市区町村、番地、建物名を入力します。住所入力後に「地図で確認」を押し、お客様にピン位置を確認してもらいます。位置が違う場合はピンを修正し、最後に「ピン位置を確定」を押します。
+        </p>
+        <div class="note">
+          太陽光会社へ連携する場合は、住所だけでなくピン確認が重要です。ピン未確認の顧客は、太陽光連携の対象から外れる場合があります。
+        </div>
+        <figure>
+          <img class="mobile-shot" src="assets/09-intake-address.png" alt="催事フォームの住所・地図入力画面">
+          <figcaption>催事フォーム: 住所・地図。住所、住居タイプ、所有形態、地図ピンを確認します。</figcaption>
+        </figure>
+
+        <h3>2-3. Looopでんき情報を入力する</h3>
+        <p>
+          現在の電力会社、月間電気料金、Looop申込ステータス、催事会場を入力します。催事会場は必須です。
+        </p>
+        <figure>
+          <img class="mobile-shot" src="assets/10-intake-electric.png" alt="催事フォームのでんき情報入力画面">
+          <figcaption>催事フォーム: でんき情報。Looop申込ステータスと催事会場をここで登録します。</figcaption>
+        </figure>
+
+        <h3>2-4. クロスセル興味商材を登録する</h3>
+        <p>
+          光回線、ウォーターサーバー、携帯電話、太陽光、蓄電池など、後追い提案につながる興味商材があればチェックします。見込み度はA・B・Cから選びます。
+        </p>
+        <figure>
+          <img class="mobile-shot" src="assets/11-intake-cross-sell.png" alt="催事フォームのクロスセル入力画面">
+          <figcaption>催事フォーム: クロスセル。興味商材と見込み度を登録します。</figcaption>
+        </figure>
+
+        <h3>2-5. 同意を確認して登録する</h3>
+        <p>
+          個人情報の取得・利用同意は必須です。太陽光会社へ顧客情報を連携する可能性がある場合は、太陽光パートナー提供同意も取得します。内容を確認し、必要なチェックを入れて「登録する」を押します。
+        </p>
+        <figure>
+          <img class="mobile-shot" src="assets/12-intake-consent.png" alt="催事フォームの同意確認画面">
+          <figcaption>催事フォーム: 同意。登録前に同意項目を確認します。</figcaption>
+        </figure>
+      </section>
+
+      <section id="customers" class="page-break">
+        <h2>3. 顧客一覧で探す・絞り込む</h2>
+        <p>
+          左メニューの「顧客」を開くと、登録済みの顧客が一覧で表示されます。顧客名、電話番号末尾、催事日、会場、担当者、Looopステータス、同意、ピン確認状態を確認できます。
+        </p>
+        <figure>
+          <img src="assets/01-customers-list.png" alt="顧客一覧画面">
+          <figcaption>顧客一覧。検索、クイック条件、詳細絞り込み、顧客行クリックを使って対象顧客を探します。</figcaption>
+        </figure>
+
+        <h3>3-1. フリーワード検索</h3>
+        <p>
+          画面上部の検索欄にお客様名やフリガナを入力すると、該当する顧客に絞り込まれます。
+        </p>
+
+        <h3>3-2. よく使う条件で絞り込む</h3>
+        <p>
+          「同意あり」「ピン確認済み」「キャンセル含む」はワンクリックで切り替えできます。条件が有効なときはボタンの色が変わります。
+        </p>
+
+        <h3>3-3. 会場・担当者・Looopステータスで絞り込む</h3>
+        <p>
+          「絞り込み」を押すと、詳細条件のパネルが開きます。会場、担当者、Looopステータスを指定して「適用」を押します。
+        </p>
+        <figure>
+          <img src="assets/02-customers-filter.png" alt="顧客一覧の絞り込みパネル">
+          <figcaption>顧客一覧: 絞り込み。会場、担当者、Looopステータスを指定します。</figcaption>
+        </figure>
+      </section>
+
+      <section id="detail" class="page-break">
+        <h2>4. 顧客詳細で確認する</h2>
+        <p>
+          顧客一覧で対象行をクリックすると、顧客詳細が開きます。上部タブで「基本情報」「住所・地図」「Looop」「クロスセル」「太陽光連携」「同意履歴」「対応履歴」などを切り替えます。
+        </p>
+        <figure>
+          <img src="assets/05-customer-detail.png" alt="顧客詳細の基本情報画面">
+          <figcaption>顧客詳細: 基本情報。右側のステータス欄で太陽光同意とピン確認状態も確認できます。</figcaption>
+        </figure>
+
+        <h3>4-1. Looopタブを確認する</h3>
+        <p>
+          「Looop」タブでは、その顧客のLooopでんき申込情報を確認できます。申込ステータス、申込日、契約日、開通日、売上計上月、支払いステータスを確認します。
+        </p>
+        <figure>
+          <img src="assets/06-customer-looop-tab.png" alt="顧客詳細のLooopタブ画面">
+          <figcaption>顧客詳細: Looopタブ。個別顧客の申込状況を確認し、必要に応じてステータス変更します。</figcaption>
+        </figure>
+
+        <h3>4-2. 個別顧客のステータスを変更する</h3>
+        <p>
+          Looopタブの「ステータス変更」を押し、新しいステータスと変更理由を入力して保存します。変更理由は後から対応履歴を確認するときの重要な記録になります。
+        </p>
+        <figure>
+          <img src="assets/07-customer-status-modal.png" alt="顧客詳細のLooopステータス変更モーダル">
+          <figcaption>顧客詳細: ステータス変更。新しいステータスと変更理由を入力します。</figcaption>
+        </figure>
+      </section>
+
+      <section id="looop" class="page-break">
+        <h2>5. Looop申込を管理する</h2>
+        <p>
+          左メニューの「Looop申込」を開くと、Looopでんきの申込状況を一覧で確認できます。今月の申込数、今月の開通数、今月の売上も画面上部で確認できます。
+        </p>
+        <figure>
+          <img src="assets/03-looop-list.png" alt="Looop申込一覧画面">
+          <figcaption>Looop申込一覧。ステータスタブ、売上単価、売上計上月、入金ステータスを確認します。</figcaption>
+        </figure>
+
+        <h3>5-1. ステータスタブで対象を切り替える</h3>
+        <p>
+          「全件」「提案中」「申込中」「契約済」「開通済」「キャンセル」を切り替えると、対象ステータスの申込だけを確認できます。
+        </p>
+
+        <h3>5-2. 一覧からステータスを変更する</h3>
+        <p>
+          対象行の「編集」を押すと、右側にステータス変更パネルが開きます。新しい申込ステータスを選択し、「保存」を押します。キャンセルに変更する場合はキャンセル理由を入力します。
+        </p>
+        <figure>
+          <img src="assets/04-looop-status-sheet.png" alt="Looop申込一覧のステータス変更パネル">
+          <figcaption>Looop申込一覧: ステータス変更。複数顧客を見ながら更新したいときに使います。</figcaption>
+        </figure>
+
+        <h3>5-3. ステータスの意味</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ステータス</th>
+              <th>使うタイミング</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>未提案</td><td>まだLooopでんきを提案していない状態です。</td></tr>
+            <tr><td>提案済み</td><td>提案は完了したが、お客様の反応待ちの状態です。</td></tr>
+            <tr><td>興味あり</td><td>お客様が前向きに検討している状態です。</td></tr>
+            <tr><td>申込済み</td><td>申込手続きが完了した状態です。</td></tr>
+            <tr><td>審査中</td><td>申込後、審査や確認が進んでいる状態です。</td></tr>
+            <tr><td>契約完了</td><td>契約が完了し、開通待ちの状態です。</td></tr>
+            <tr><td>開通完了</td><td>電力の切り替え・開通が完了した状態です。</td></tr>
+            <tr><td>キャンセル</td><td>申込または契約がキャンセルになった状態です。理由を残します。</td></tr>
+            <tr><td>対象外</td><td>提案対象外、または申込できない顧客です。</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="solar" class="page-break">
+        <h2>6. 太陽光連携CSVを出力する</h2>
+        <p>
+          左メニューの「太陽光連携」を開くと、太陽光会社へ連携できる顧客が表示されます。対象になるのは、原則として太陽光パートナー提供同意があり、住所のピン確認が済んでいる顧客です。
+        </p>
+        <figure>
+          <img src="assets/13-solar-handoff.png" alt="太陽光連携対象者一覧画面">
+          <figcaption>太陽光連携。連携対象者を選択し、出力先会社を選んでCSV出力します。</figcaption>
+        </figure>
+
+        <h3>6-1. CSV出力の手順</h3>
+        <ol>
+          <li>連携する顧客にチェックを入れます。</li>
+          <li>右上の「出力先」で連携先会社を選びます。</li>
+          <li>「CSV出力」を押します。</li>
+          <li>確認画面で出力件数、出力先会社、同意バージョンを確認します。</li>
+          <li>問題なければ「出力する」を押します。</li>
+        </ol>
+        <figure>
+          <img src="assets/14-solar-csv-confirm.png" alt="CSV出力の確認ダイアログ">
+          <figcaption>CSV出力確認。個人情報を含むため、出力前に内容を必ず確認します。</figcaption>
+        </figure>
+
+        <div class="warning">
+          CSVには個人情報が含まれます。必要な顧客だけを選択し、出力後のファイル管理・送付先・保存場所に注意してください。
+        </div>
+      </section>
+
+      <section id="rules" class="page-break">
+        <h2>7. 運用ルール・注意点</h2>
+
+        <h3>7-1. 登録時の注意</h3>
+        <ul>
+          <li>電話番号は重複確認に使うため、聞き間違い・入力間違いがないか確認します。</li>
+          <li>住所は番地・建物名まで入力し、太陽光連携の可能性がある場合は必ずピン位置を確認します。</li>
+          <li>同意項目はお客様に内容を説明してからチェックします。</li>
+          <li>入力途中のデータは下書き保存されるため、端末を共用する場合は不要な下書きを削除します。</li>
+        </ul>
+
+        <h3>7-2. ステータス更新時の注意</h3>
+        <ul>
+          <li>申込状況が変わったら、できるだけ当日中にLooopステータスを更新します。</li>
+          <li>キャンセル時は、理由を具体的に残します。</li>
+          <li>契約完了・開通完了にした顧客は、売上計上月と入金ステータスもあわせて確認します。</li>
+        </ul>
+
+        <h3>7-3. CSV出力時の注意</h3>
+        <ul>
+          <li>太陽光連携の対象条件は「同意取得済み」「ピン確認済み」です。</li>
+          <li>出力前に、出力先会社と件数が正しいか確認します。</li>
+          <li>出力したCSVは個人情報として扱い、不要になったファイルは社内ルールに従って削除します。</li>
+        </ul>
+
+        <h3>7-4. 困ったとき</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>状況</th>
+              <th>確認すること</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>顧客が見つからない</td>
+              <td>検索文字、絞り込み条件、キャンセル含む設定を確認します。</td>
+            </tr>
+            <tr>
+              <td>太陽光連携に表示されない</td>
+              <td>太陽光同意が取得済みか、住所のピン確認が済んでいるか確認します。</td>
+            </tr>
+            <tr>
+              <td>登録ボタンが押せない</td>
+              <td>必須項目と個人情報同意にチェックが入っているか確認します。</td>
+            </tr>
+            <tr>
+              <td>ステータス変更が保存できない</td>
+              <td>必須の変更理由またはキャンセル理由が入力されているか確認します。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p class="small">
+          このマニュアルのスクリーンショットはマニュアル作成用のサンプルデータを使用しています。
+        </p>
+      </section>
+    </main>
+  </article>
+</body>
+</html>

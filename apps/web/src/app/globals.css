@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CLAUDE.md 準拠の基本スタイル */
+
+@layer base {
+  :root {
+    --radius: 6px;
+    color-scheme: light;
+  }
+
+  html {
+    font-family:
+      'Hiragino Sans',
+      'Hiragino Kaku Gothic ProN',
+      'Noto Sans JP',
+      'Yu Gothic UI',
+      'Meiryo',
+      system-ui,
+      -apple-system,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: #1d2129;
+    font-size: 14px;
+    line-height: 22px;
+  }
+
+  /* 数値・電話番号・金額は等幅 */
+  .num,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* フォーカスリングは消さない（CLAUDE.md §8） */
+  :focus-visible {
+    outline: 2px solid #3370ff;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* iOS Safari でフォームがズームしない最低16px */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  @media (min-width: 768px) {
+    input,
+    select,
+    textarea {
+      font-size: 14px;
+    }
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  /* Lark 風バッジ（背景=色12% / 文字=同色600番台） */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 500;
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+  }
+}
