@@ -6,6 +6,7 @@ import {
   leads,
   events,
   users,
+  looopContracts,
   partnerCompanies,
   eq,
   and,
@@ -19,6 +20,8 @@ export interface SolarEligibleCustomer {
   name: string;
   kana: string | null;
   phoneEnc: string;
+  emailEnc: string | null;
+  birthDate: string | null;
   postalCode: string | null;
   prefecture: string | null;
   city: string | null;
@@ -29,6 +32,9 @@ export interface SolarEligibleCustomer {
   staffName: string | null;
   eventName: string | null;
   eventDate: string | null;
+  monthlyElectricBill: number | null;
+  wattage: number | null;
+  billUsageMonth: string | null;
   consentedAt: string;
   consentTextVersion: string;
 }
@@ -41,6 +47,8 @@ export async function getSolarEligibleCustomers(): Promise<SolarEligibleCustomer
       name: customers.name,
       kana: customers.kana,
       phoneEnc: customers.phoneEnc,
+      emailEnc: customers.emailEnc,
+      birthDate: customers.birthDate,
       postalCode: customerAddresses.postalCode,
       prefecture: customerAddresses.prefecture,
       city: customerAddresses.city,
@@ -51,6 +59,9 @@ export async function getSolarEligibleCustomers(): Promise<SolarEligibleCustomer
       staffName: users.displayName,
       eventName: events.eventName,
       eventDate: events.eventDate,
+      monthlyElectricBill: looopContracts.monthlyElectricBill,
+      wattage: looopContracts.wattage,
+      billUsageMonth: looopContracts.billUsageMonth,
       consentedAt: consents.consentedAt,
       consentTextVersion: consents.consentTextVersion,
     })
@@ -76,6 +87,13 @@ export async function getSolarEligibleCustomers(): Promise<SolarEligibleCustomer
     .leftJoin(leads, eq(leads.customerId, customers.id))
     .leftJoin(events, eq(events.id, leads.eventId))
     .leftJoin(users, eq(users.id, leads.staffId))
+    .leftJoin(
+      looopContracts,
+      and(
+        eq(looopContracts.customerId, customers.id),
+        isNull(looopContracts.deletedAt),
+      ),
+    )
     .where(isNull(customers.deletedAt))
     .orderBy(desc(customers.createdAt));
 
@@ -94,6 +112,8 @@ export async function getSolarEligibleCustomers(): Promise<SolarEligibleCustomer
       name: row.name,
       kana: row.kana ?? null,
       phoneEnc: row.phoneEnc,
+      emailEnc: row.emailEnc ?? null,
+      birthDate: row.birthDate ?? null,
       postalCode: row.postalCode ?? null,
       prefecture: row.prefecture ?? null,
       city: row.city ?? null,
@@ -104,6 +124,9 @@ export async function getSolarEligibleCustomers(): Promise<SolarEligibleCustomer
       staffName: row.staffName ?? null,
       eventName: row.eventName ?? null,
       eventDate: row.eventDate ?? null,
+      monthlyElectricBill: row.monthlyElectricBill ?? null,
+      wattage: row.wattage ?? null,
+      billUsageMonth: row.billUsageMonth ?? null,
       consentedAt: consentDate,
       consentTextVersion: row.consentTextVersion,
     });

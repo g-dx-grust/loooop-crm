@@ -8,6 +8,7 @@ import {
   leads,
   events,
   users,
+  looopContracts,
   partnerHandoffs,
   csvExports,
   auditLogs,
@@ -51,6 +52,8 @@ export async function exportSolarCsv(input: ExportInput): Promise<ExportResult> 
         name: customers.name,
         kana: customers.kana,
         phoneEnc: customers.phoneEnc,
+        emailEnc: customers.emailEnc,
+        birthDate: customers.birthDate,
         postalCode: customerAddresses.postalCode,
         prefecture: customerAddresses.prefecture,
         city: customerAddresses.city,
@@ -61,6 +64,9 @@ export async function exportSolarCsv(input: ExportInput): Promise<ExportResult> 
         staffName: users.displayName,
         eventName: events.eventName,
         eventDate: events.eventDate,
+        monthlyElectricBill: looopContracts.monthlyElectricBill,
+        wattage: looopContracts.wattage,
+        billUsageMonth: looopContracts.billUsageMonth,
         consentedAt: consents.consentedAt,
         consentTextVersion: consents.consentTextVersion,
       })
@@ -85,6 +91,13 @@ export async function exportSolarCsv(input: ExportInput): Promise<ExportResult> 
       .leftJoin(leads, eq(leads.customerId, customers.id))
       .leftJoin(events, eq(events.id, leads.eventId))
       .leftJoin(users, eq(users.id, leads.staffId))
+      .leftJoin(
+        looopContracts,
+        and(
+          eq(looopContracts.customerId, customers.id),
+          isNull(looopContracts.deletedAt),
+        ),
+      )
       .where(
         and(
           isNull(customers.deletedAt),
@@ -156,6 +169,8 @@ export async function exportSolarCsv(input: ExportInput): Promise<ExportResult> 
       '氏名',
       'カナ',
       '電話番号',
+      'メールアドレス',
+      '生年月日',
       '郵便番号',
       '都道府県',
       '市区町村',
@@ -166,6 +181,9 @@ export async function exportSolarCsv(input: ExportInput): Promise<ExportResult> 
       '担当者名',
       '催事名',
       '催事日',
+      '月間電気料金',
+      'ワット数',
+      '明細利用月',
       '同意日時',
       '同意バージョン',
     ];
@@ -180,6 +198,8 @@ export async function exportSolarCsv(input: ExportInput): Promise<ExportResult> 
         r.name,
         r.kana ?? '',
         r.phoneEnc,
+        r.emailEnc ?? '',
+        r.birthDate ?? '',
         r.postalCode ?? '',
         r.prefecture ?? '',
         r.city ?? '',
@@ -190,6 +210,9 @@ export async function exportSolarCsv(input: ExportInput): Promise<ExportResult> 
         r.staffName ?? '',
         r.eventName ?? '',
         r.eventDate ?? '',
+        r.monthlyElectricBill != null ? String(r.monthlyElectricBill) : '',
+        r.wattage != null ? String(r.wattage) : '',
+        r.billUsageMonth ?? '',
         consentDate,
         r.consentTextVersion,
       ];

@@ -61,12 +61,67 @@ export function CustomerTableClient({ items }: Props) {
 
   const clearSelection = () => setSelected(new Set());
 
+  const exportSelectedCsv = () => {
+    const selectedItems = items.filter((item) => selected.has(item.id));
+    const header = [
+      '顧客ID',
+      '氏名',
+      'カナ',
+      '電話番号',
+      'メールアドレス',
+      '生年月日',
+      '催事日',
+      '催事名',
+      '会場名',
+      '担当者',
+      '月間電気料金',
+      'ワット数',
+      '明細利用月',
+      'Looopステータス',
+      '同意',
+      'ピン確認',
+    ];
+    const rows = selectedItems.map((item) => [
+      item.displayId,
+      item.name,
+      item.kana ?? '',
+      item.phoneEnc,
+      item.emailEnc ?? '',
+      item.birthDate ?? '',
+      item.eventDate ?? '',
+      item.eventName ?? '',
+      item.venueName ?? '',
+      item.staffName ?? '',
+      item.monthlyElectricBill != null ? String(item.monthlyElectricBill) : '',
+      item.wattage != null ? String(item.wattage) : '',
+      item.billUsageMonth ?? '',
+      item.looopStatus ? (LOOOP_STATUS_LABELS[item.looopStatus] ?? item.looopStatus) : '',
+      item.hasConsent ? 'あり' : item.consentRevoked ? '撤回済み' : 'なし',
+      item.pinConfirmed ? '確認済み' : '未確認',
+    ]);
+
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    const now = new Date();
+    const date = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    anchor.href = url;
+    anchor.download = `customers_${date}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       {/* Floating action bar */}
       {selected.size > 0 && (
         <tr>
-          <td colSpan={10} className="p-0">
+          <td colSpan={12} className="p-0">
             <div
               className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2"
               role="region"
@@ -80,10 +135,7 @@ export function CustomerTableClient({ items }: Props) {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => {
-                    // CSV export for selected would go here
-                    alert(`${selected.size}件を選択しました（CSV出力機能は太陽光連携画面から）`);
-                  }}
+                  onClick={exportSelectedCsv}
                 >
                   <FileDown className="size-4" />
                   CSV出力
@@ -113,7 +165,7 @@ export function CustomerTableClient({ items }: Props) {
             aria-label="全件選択"
           />
         </td>
-        <td colSpan={9} className="py-0" />
+        <td colSpan={11} className="py-0" />
       </tr>
 
       {items.map((item) => {
@@ -161,6 +213,26 @@ export function CustomerTableClient({ items }: Props) {
               </span>
             </td>
 
+            {/* Email / birth date */}
+            <td className="px-3">
+              {item.emailEnc || item.birthDate ? (
+                <div className="flex flex-col">
+                  {item.emailEnc ? (
+                    <span className="max-w-[180px] truncate text-xs text-text-secondary">
+                      {item.emailEnc}
+                    </span>
+                  ) : null}
+                  {item.birthDate ? (
+                    <span className="tabular-nums text-xs text-text-tertiary">
+                      {item.birthDate}
+                    </span>
+                  ) : null}
+                </div>
+              ) : (
+                <span className="text-text-disabled">—</span>
+              )}
+            </td>
+
             {/* Event date / venue — 2 lines */}
             <td className="px-3">
               {item.eventDate || item.venueName ? (
@@ -170,6 +242,31 @@ export function CustomerTableClient({ items }: Props) {
                   ) : null}
                   {item.venueName ? (
                     <span className="text-sm text-text-primary leading-5">{item.venueName}</span>
+                  ) : null}
+                </div>
+              ) : (
+                <span className="text-text-disabled">—</span>
+              )}
+            </td>
+
+            {/* Electric info */}
+            <td className="px-3">
+              {item.monthlyElectricBill != null || item.wattage != null || item.billUsageMonth ? (
+                <div className="flex flex-col gap-0 text-xs">
+                  {item.monthlyElectricBill != null ? (
+                    <span className="tabular-nums text-text-primary">
+                      ¥{item.monthlyElectricBill.toLocaleString('ja-JP')}
+                    </span>
+                  ) : null}
+                  {item.wattage != null ? (
+                    <span className="tabular-nums text-text-secondary">
+                      {item.wattage.toLocaleString('ja-JP')}W
+                    </span>
+                  ) : null}
+                  {item.billUsageMonth ? (
+                    <span className="tabular-nums text-text-tertiary">
+                      {item.billUsageMonth}
+                    </span>
                   ) : null}
                 </div>
               ) : (

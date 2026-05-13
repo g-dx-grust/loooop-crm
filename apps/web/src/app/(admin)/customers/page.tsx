@@ -140,7 +140,7 @@ export default async function CustomersPage({
 
         {/* Table */}
         <div className="overflow-x-auto rounded-lg border border-border bg-white">
-          <table className="w-full min-w-[960px] border-collapse text-sm">
+          <table className="w-full min-w-[1240px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-border bg-bg-subtle">
                 {/* checkbox placeholder — managed by client component */}
@@ -148,7 +148,9 @@ export default async function CustomersPage({
                 <SortTh label="ID"     field="displayId" currentSort={sortField} currentOrder={sortOrder} params={params} />
                 <SortTh label="お客様名" field="name"      currentSort={sortField} currentOrder={sortOrder} params={params} />
                 <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">電話番号</th>
+                <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">メール / 生年月日</th>
                 <SortTh label="催事日 / 会場" field="eventDate" currentSort={sortField} currentOrder={sortOrder} params={params} />
+                <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">でんき情報</th>
                 <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">担当者</th>
                 <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">Looopステータス</th>
                 <th className="h-9 px-3 text-center text-xs font-semibold text-text-secondary">同意</th>
@@ -159,7 +161,7 @@ export default async function CustomersPage({
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-16 text-center">
+                  <td colSpan={12} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <Search className="size-8 text-text-disabled" aria-hidden />
                       <p className="text-sm text-text-secondary">条件に一致する顧客が見つかりません</p>

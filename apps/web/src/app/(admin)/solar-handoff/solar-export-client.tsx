@@ -210,7 +210,7 @@ export function SolarExportClient({ customers: eligibleCustomers, partners }: Pr
           </div>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border bg-white">
-            <table className="w-full min-w-[860px] border-collapse text-sm">
+            <table className="w-full min-w-[1040px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-border bg-bg-subtle">
                   <th className="h-9 w-10 px-3 text-center">
@@ -225,7 +225,9 @@ export function SolarExportClient({ customers: eligibleCustomers, partners }: Pr
                   <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">顧客ID</th>
                   <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">氏名</th>
                   <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">電話番号</th>
+                  <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">メール / 生年月日</th>
                   <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">住所</th>
+                  <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">でんき情報</th>
                   <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">担当 / 会場</th>
                   <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">同意日時</th>
                   <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">同意Ver.</th>
@@ -277,9 +279,49 @@ export function SolarExportClient({ customers: eligibleCustomers, partners }: Pr
                         </span>
                       </td>
                       <td className="px-3">
+                        <div className="flex flex-col">
+                          {c.emailEnc ? (
+                            <span className="max-w-[180px] truncate text-xs text-text-secondary">
+                              {c.emailEnc}
+                            </span>
+                          ) : null}
+                          {c.birthDate ? (
+                            <span className="tabular-nums text-xs text-text-tertiary">
+                              {c.birthDate}
+                            </span>
+                          ) : null}
+                          {!c.emailEnc && !c.birthDate ? (
+                            <span className="text-text-disabled">—</span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-3">
                         <span className="text-text-secondary">
                           {addressSummary || <span className="text-text-disabled">—</span>}
                         </span>
+                      </td>
+                      <td className="px-3">
+                        {c.monthlyElectricBill != null || c.wattage != null || c.billUsageMonth ? (
+                          <div className="flex flex-col text-xs">
+                            {c.monthlyElectricBill != null ? (
+                              <span className="tabular-nums text-text-primary">
+                                ¥{c.monthlyElectricBill.toLocaleString('ja-JP')}
+                              </span>
+                            ) : null}
+                            {c.wattage != null ? (
+                              <span className="tabular-nums text-text-secondary">
+                                {c.wattage.toLocaleString('ja-JP')}W
+                              </span>
+                            ) : null}
+                            {c.billUsageMonth ? (
+                              <span className="tabular-nums text-text-tertiary">
+                                {c.billUsageMonth}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <span className="text-text-disabled">—</span>
+                        )}
                       </td>
                       <td className="px-3">
                         <div className="text-xs text-text-secondary">

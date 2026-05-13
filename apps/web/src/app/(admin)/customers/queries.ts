@@ -62,10 +62,16 @@ export interface CustomerListItem {
   name: string;
   kana: string | null;
   phoneEnc: string; // masked by caller
+  emailEnc: string | null;
+  birthDate: string | null;
   city: string | null;
   eventDate: string | null;
+  eventName: string | null;
   venueName: string | null;
   staffName: string | null;
+  monthlyElectricBill: number | null;
+  wattage: number | null;
+  billUsageMonth: string | null;
   looopStatus: string | null;
   hasConsent: boolean;
   consentRevoked: boolean;
@@ -143,13 +149,19 @@ export async function getCustomers(filters: CustomerFilters): Promise<{
       name: customers.name,
       kana: customers.kana,
       phoneEnc: customers.phoneEnc,
+      emailEnc: customers.emailEnc,
+      birthDate: customers.birthDate,
       updatedAt: customers.updatedAt,
       city: customerAddresses.city,
       pinConfirmed: customerAddresses.pinConfirmed,
+      eventName: events.eventName,
       eventDate: events.eventDate,
       venueName: events.venueName,
       staffName: users.displayName,
       looopStatus: looopContracts.status,
+      monthlyElectricBill: looopContracts.monthlyElectricBill,
+      wattage: looopContracts.wattage,
+      billUsageMonth: looopContracts.billUsageMonth,
       consentStatus: consents.consentStatus,
       consentType: consents.consentType,
       consentWithdrawnAt: consents.withdrawnAt,
@@ -233,10 +245,16 @@ export async function getCustomers(filters: CustomerFilters): Promise<{
     name: r.name,
     kana: r.kana,
     phoneEnc: r.phoneEnc,
+    emailEnc: r.emailEnc ?? null,
+    birthDate: r.birthDate ?? null,
     city: r.city ?? null,
     eventDate: r.eventDate ?? null,
+    eventName: r.eventName ?? null,
     venueName: r.venueName ?? null,
     staffName: r.staffName ?? null,
+    monthlyElectricBill: r.monthlyElectricBill ?? null,
+    wattage: r.wattage ?? null,
+    billUsageMonth: r.billUsageMonth ?? null,
     looopStatus: r.looopStatus ?? null,
     hasConsent:
       r.consentType === 'solar_partner_share' &&

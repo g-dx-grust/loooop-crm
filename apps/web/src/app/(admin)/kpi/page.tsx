@@ -1,7 +1,13 @@
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/format';
-import { getKpiSummary, getMonthlyTrend, getStaffPerformance } from './queries';
+import {
+  getElectricBillBands,
+  getEventPerformance,
+  getKpiSummary,
+  getMonthlyTrend,
+  getStaffPerformance,
+} from './queries';
 import { BarChart, MonthPicker } from './kpi-charts';
 import type { BarChartDataPoint } from './kpi-charts';
 
@@ -102,10 +108,12 @@ export default async function KpiPage({ searchParams }: PageProps) {
   // Selectable months: current + previous 5 (6 total), newest first
   const selectableMonths = recentMonths(todayYm, 6);
 
-  const [summary, trend, staffPerf] = await Promise.all([
+  const [summary, trend, staffPerf, eventPerf, electricBillBands] = await Promise.all([
     getKpiSummary(selectedMonth),
     getMonthlyTrend(6, todayYm),
     getStaffPerformance(selectedMonth),
+    getEventPerformance(selectedMonth),
+    getElectricBillBands(selectedMonth),
   ]);
 
   // --- Bar chart data: 申込数 ---
@@ -127,6 +135,12 @@ export default async function KpiPage({ searchParams }: PageProps) {
     label: t.label,
     value: t.opened,
     isCurrentMonth: t.yearMonth === selectedMonth,
+  }));
+
+  const electricBillBars: BarChartDataPoint[] = electricBillBands.map((band) => ({
+    label: band.label.replace('円', ''),
+    value: band.count,
+    isCurrentMonth: true,
   }));
 
   return (
@@ -200,6 +214,87 @@ export default async function KpiPage({ searchParams }: PageProps) {
               height={280}
               formatValue={(v) => formatCurrency(v)}
             />
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>月間電気料金帯</CardTitle>
+            </CardHeader>
+            <BarChart
+              data={electricBillBars}
+              height={220}
+              formatValue={(v) => `${v}件`}
+            />
+          </Card>
+
+          <Card className="p-0 overflow-hidden">
+            <div className="px-5 py-3 border-b border-border">
+              <h2 className="text-h1 text-text-primary">催事会場別実績</h2>
+            </div>
+            {eventPerf.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-text-tertiary text-center">
+                {formatMonthLabel(selectedMonth)}の会場データはありません
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-bg-subtle">
+                      <th className="h-9 px-4 text-left text-xs font-semibold text-text-secondary">
+                        会場
+                      </th>
+                      <th className="h-9 px-4 text-right text-xs font-semibold text-text-secondary">
+                        登録数
+                      </th>
+                      <th className="h-9 px-4 text-right text-xs font-semibold text-text-secondary">
+                        申込
+                      </th>
+                      <th className="h-9 px-4 text-right text-xs font-semibold text-text-secondary">
+                        開通
+                      </th>
+                      <th className="h-9 px-4 text-right text-xs font-semibold text-text-secondary">
+                        平均電気料金
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {eventPerf.map((row) => (
+                      <tr
+                        key={`${row.eventName}-${row.eventDate ?? ''}`}
+                        className="h-10 border-b border-border last:border-0 hover:bg-bg-subtle"
+                      >
+                        <td className="px-4">
+                          <div className="flex flex-col">
+                            <span className="text-sm text-text-primary">
+                              {row.venueName ?? row.eventName}
+                            </span>
+                            {row.eventDate ? (
+                              <span className="text-xs tabular-nums text-text-tertiary">
+                                {row.eventDate}
+                              </span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-4 text-right tabular-nums text-sm text-text-primary">
+                          {row.leadCount.toLocaleString('ja-JP')}
+                        </td>
+                        <td className="px-4 text-right tabular-nums text-sm text-text-primary">
+                          {row.applications.toLocaleString('ja-JP')}
+                        </td>
+                        <td className="px-4 text-right tabular-nums text-sm text-text-primary">
+                          {row.opened.toLocaleString('ja-JP')}
+                        </td>
+                        <td className="px-4 text-right tabular-nums text-sm text-text-primary">
+                          {row.avgMonthlyBill != null ? formatCurrency(row.avgMonthlyBill) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
         </div>
 
