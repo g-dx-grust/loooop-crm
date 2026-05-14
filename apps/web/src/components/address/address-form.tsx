@@ -322,27 +322,46 @@ function MapPinSection({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address: fullAddress }),
       });
-      if (res.ok) {
-        const data = (await res.json()) as {
-          latitude: number;
-          longitude: number;
-          placeId: string | null;
-          formattedAddress: string | null;
-          googleMapsUrl?: string | null;
-          accuracy: 'google' | 'stub';
-        };
-        onGeocoded(data);
+
+      // Always 200 now — but log raw body if not parseable
+      let data: {
+        success: boolean;
+        latitude?: number;
+        longitude?: number;
+        placeId?: string | null;
+        formattedAddress?: string | null;
+        googleMapsUrl?: string | null;
+        accuracy?: 'google' | 'stub';
+        error?: string;
+        googleStatus?: string;
+        googleErrorMessage?: string | null;
+        sentAddress?: string;
+      };
+      try {
+        data = (await res.json()) as typeof data;
+      } catch {
+        const raw = await res.text().catch(() => '(読み取り不可)');
+        console.error('[geocode] JSONパース失敗。サーバー応答:', raw);
+        setGeoError(`位置情報の取得に失敗しました。(HTTP ${res.status}) 送信住所: ${fullAddress}`);
+        return;
+      }
+
+      if (data.success && data.latitude !== undefined && data.longitude !== undefined) {
+        onGeocoded({
+          latitude: data.latitude,
+          longitude: data.longitude,
+          placeId: data.placeId ?? null,
+          formattedAddress: data.formattedAddress ?? null,
+          googleMapsUrl: data.googleMapsUrl ?? null,
+          accuracy: data.accuracy ?? 'stub',
+        });
         // New object reference → MapController pans to this location
         setPanTarget({ lat: data.latitude, lng: data.longitude });
       } else {
-        const errData = (await res.json().catch(() => ({}))) as {
-          googleStatus?: string;
-          googleErrorMessage?: string | null;
-          sentAddress?: string;
-        };
-        console.error('[geocode] エラー応答:', errData);
-        const detail = errData.googleStatus ? ` (Google: ${errData.googleStatus})` : '';
-        setGeoError(`位置情報の取得に失敗しました${detail}。送信住所: ${errData.sentAddress ?? fullAddress}`);
+        console.error('[geocode] エラー応答:', data);
+        const detail = data.googleStatus ? ` (Google: ${data.googleStatus})` : '';
+        const hint = data.googleErrorMessage ? ` — ${data.googleErrorMessage}` : '';
+        setGeoError(`位置情報の取得に失敗しました${detail}${hint}。送信住所: ${data.sentAddress ?? fullAddress}`);
       }
     } catch (err) {
       console.error('[geocode] リクエストエラー:', err);
