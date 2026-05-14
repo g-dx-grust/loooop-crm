@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { MapPin, Loader2, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,8 +38,17 @@ function buildGoogleMapsUrl(latitude: number, longitude: number): string {
   return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
 }
 
+// NEXT_PUBLIC_ vars are inlined at build time — safe to reference at module level
+const MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
+// DEMO_MAP_ID is a Google-provided value that enables vector rendering without
+// creating a Map ID in Cloud Console. Replace with a real Map ID in production
+// by setting NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID.
+const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID ?? 'DEMO_MAP_ID';
+
+const TOKYO_STATION = { lat: 35.6812, lng: 139.7671 } as const;
+
 // ---------------------------------------------------------------------------
-// Field label
+// Sub-components (no Google Maps dependency)
 // ---------------------------------------------------------------------------
 function FieldLabel({
   htmlFor,
@@ -61,9 +70,6 @@ function FieldLabel({
   );
 }
 
-// ---------------------------------------------------------------------------
-// PostalCodeField
-// ---------------------------------------------------------------------------
 function PostalCodeField({
   value,
   onChange,
@@ -83,10 +89,7 @@ function PostalCodeField({
       .replace(/[^0-9]/g, '')
       .slice(0, 7);
     onChange(digits);
-
-    if (digits.length === 7) {
-      void fetchPostal(digits);
-    }
+    if (digits.length === 7) void fetchPostal(digits);
   };
 
   const fetchPostal = async (zipcode: string) => {
@@ -95,8 +98,6 @@ function PostalCodeField({
       const res = await fetch(`/api/geocode/postal?zipcode=${zipcode}`);
       if (res.ok) {
         const data = (await res.json()) as { prefecture: string; city: string; town: string };
-        // Pass zipcode explicitly so the parent can include it in the same update,
-        // preventing stale-closure overwrites of the postalCode field.
         onFill(zipcode, data.prefecture, data.city + (data.town ?? ''));
       }
     } catch {
@@ -135,9 +136,6 @@ function PostalCodeField({
   );
 }
 
-// ---------------------------------------------------------------------------
-// AddressFields
-// ---------------------------------------------------------------------------
 function AddressFields({
   prefecture,
   city,
@@ -224,10 +222,48 @@ function AddressFields({
 }
 
 // ---------------------------------------------------------------------------
+// Google Maps components
+// ---------------------------------------------------------------------------
+
+// Custom SVG pin: filled=confirmed, outlined=unconfirmed (per CLAUDE.md §5.9)
+function PinSvg({ confirmed }: { confirmed: boolean }) {
+  return (
+    <svg
+      width="28"
+      height="36"
+      viewBox="0 0 28 36"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <path
+        d="M14 0C6.268 0 0 6.268 0 14C0 24.5 14 36 14 36C14 36 28 24.5 28 14C28 6.268 21.732 0 14 0Z"
+        fill={confirmed ? '#3370FF' : '#FFFFFF'}
+        stroke="#3370FF"
+        strokeWidth="2"
+      />
+      <circle cx="14" cy="14" r="5" fill={confirmed ? '#FFFFFF' : '#3370FF'} />
+    </svg>
+  );
+}
+
+// MapController must be a child of <Map> to use useMap().
+// When `target` changes (new object reference = new geocoding result),
+// it imperatively pans the map. Drag events don't trigger this because
+// they don't update `target`.
+function MapController({ target }: { target: { lat: number; lng: number } | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || !target) return;
+    map.panTo(target);
+    map.setZoom(17);
+  }, [map, target]);
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // MapPinSection
 // ---------------------------------------------------------------------------
-const TOKYO_STATION = { lat: 35.6812, lng: 139.7671 } as const;
-
 function MapPinSection({
   value,
   fullAddress,
@@ -263,15 +299,21 @@ function MapPinSection({
   pinError?: string;
 }) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const hasMapsKey = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const [geoError, setGeoError] = useState('');
+  // panTarget: a NEW object on each geocoding call → MapController.useEffect fires
+  // Dragging the marker does NOT update panTarget → no unwanted re-centering
+  const [panTarget, setPanTarget] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Ref so handleDragEnd always reads the latest value without being recreated
+  const pinCorrectionNoteRef = useRef(value.pinCorrectionNote);
+  pinCorrectionNoteRef.current = value.pinCorrectionNote;
 
   const handleGeocode = async () => {
     if (!fullAddress.trim()) {
-      setError('住所を入力してから地図を確認してください。');
+      setGeoError('住所を入力してから地図を確認してください。');
       return;
     }
-    setError('');
+    setGeoError('');
     setLoading(true);
     try {
       const res = await fetch('/api/geocode', {
@@ -289,11 +331,13 @@ function MapPinSection({
           accuracy: 'google' | 'stub';
         };
         onGeocoded(data);
+        // New object reference → MapController pans to this location
+        setPanTarget({ lat: data.latitude, lng: data.longitude });
       } else {
-        setError('位置情報の取得に失敗しました。');
+        setGeoError('位置情報の取得に失敗しました。');
       }
     } catch {
-      setError('位置情報の取得に失敗しました。');
+      setGeoError('位置情報の取得に失敗しました。');
     } finally {
       setLoading(false);
     }
@@ -304,10 +348,10 @@ function MapPinSection({
       const lat = e.latLng?.lat();
       const lng = e.latLng?.lng();
       if (lat !== undefined && lng !== undefined) {
-        onCoordUpdate(lat, lng, true, value.pinCorrectionNote);
+        onCoordUpdate(lat, lng, true, pinCorrectionNoteRef.current);
       }
     },
-    [onCoordUpdate, value.pinCorrectionNote],
+    [onCoordUpdate],
   );
 
   const handleConfirmPin = useCallback(() => {
@@ -315,13 +359,14 @@ function MapPinSection({
   }, [onPinConfirmedChange]);
 
   const hasCoords = value.latitude !== undefined && value.longitude !== undefined;
-  const center =
-    hasCoords
-      ? { lat: value.latitude as number, lng: value.longitude as number }
-      : TOKYO_STATION;
+  const markerPos = hasCoords
+    ? { lat: value.latitude as number, lng: value.longitude as number }
+    : null;
+  const defaultCenter = markerPos ?? TOKYO_STATION;
 
   return (
     <div className="space-y-3">
+      {/* Geocode trigger button */}
       <div className="flex items-center gap-2">
         <Button
           type="button"
@@ -335,7 +380,7 @@ function MapPinSection({
           地図で確認
         </Button>
         {hasCoords && value.accuracyStatus !== 'unconfirmed' && (
-          <span className="text-xs text-text-tertiary tabular-nums">
+          <span className="text-xs text-text-tertiary">
             {value.accuracyStatus === 'stub'
               ? '仮位置'
               : value.accuracyStatus === 'manually_corrected'
@@ -345,95 +390,85 @@ function MapPinSection({
         )}
       </div>
 
-      {error && <p className="text-xs text-status-error">{error}</p>}
+      {geoError && <p className="text-xs text-status-error">{geoError}</p>}
       {pinError && <p className="text-xs text-status-error">{pinError}</p>}
 
-      {/* Map area */}
-      {hasMapsKey ? (
+      {/* Map display */}
+      {MAPS_API_KEY ? (
         <div
-          className="aspect-video w-full overflow-hidden rounded border border-border"
+          className="aspect-[4/3] w-full overflow-hidden rounded border border-border sm:aspect-video"
           aria-label="地図プレビュー"
         >
-          <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string}>
+          <APIProvider apiKey={MAPS_API_KEY}>
             <Map
-              defaultCenter={center}
-              defaultZoom={17}
+              defaultCenter={defaultCenter}
+              defaultZoom={hasCoords ? 17 : 12}
               gestureHandling="greedy"
-              disableDefaultUI={false}
-              mapId="looop-crm-map"
+              disableDefaultUI
+              mapId={MAP_ID}
               className="h-full w-full"
             >
-              {hasCoords && (
+              <MapController target={panTarget} />
+              {markerPos && (
                 <AdvancedMarker
-                  position={center}
+                  position={markerPos}
                   draggable
                   onDragEnd={handleDragEnd}
+                  title={value.pinConfirmed ? 'ピン確定済み' : 'ドラッグして位置を調整できます'}
                 >
-                  <Pin
-                    background="#3370FF"
-                    borderColor="#2858D3"
-                    glyphColor="#FFFFFF"
-                  />
+                  <PinSvg confirmed={value.pinConfirmed} />
                 </AdvancedMarker>
               )}
             </Map>
           </APIProvider>
         </div>
       ) : (
-        /* Fallback when no API key */
+        /* Fallback when NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is not set */
         <div
-          className="relative aspect-video w-full overflow-hidden rounded border border-border bg-bg-muted"
-          aria-label="地図プレビュー"
+          className="aspect-[4/3] w-full overflow-hidden rounded border border-border bg-bg-muted sm:aspect-video"
+          aria-label="地図プレビュー（APIキー未設定）"
         >
-          {hasCoords ? (
-            <div className="flex h-full flex-col items-center justify-center gap-1 px-4 text-center">
-              <MapPin size={20} className="text-text-tertiary" aria-hidden />
-              <p className="text-sm text-text-tertiary">
-                Googleマップ連携は本番環境で有効になります
-              </p>
-            </div>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-1 px-4 text-center">
-              <MapPin size={20} className="text-text-tertiary" aria-hidden />
-              <p className="text-sm text-text-tertiary">
-                住所を入力して「地図で確認」を押してください
-              </p>
-            </div>
-          )}
+          <div className="flex h-full flex-col items-center justify-center gap-1 px-4 text-center">
+            <MapPin size={20} className="text-text-tertiary" aria-hidden />
+            <p className="text-sm text-text-tertiary">
+              {hasCoords
+                ? 'Googleマップ連携は本番環境で有効になります'
+                : '住所を入力して「地図で確認」を押してください'}
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Coordinates display */}
+      {/* Coordinates summary */}
       {hasCoords && (
         <div className="rounded border border-border bg-bg-subtle px-3 py-2 text-xs text-text-tertiary tabular-nums">
           <span>
             緯度: {value.latitude?.toFixed(6)} / 経度: {value.longitude?.toFixed(6)}
           </span>
-          {value.googlePlaceId && (
-            <span className="ml-3">Place ID: {value.googlePlaceId}</span>
-          )}
           {value.googleFormattedAddress && (
             <p className="mt-1 text-text-secondary">{value.googleFormattedAddress}</p>
           )}
-          {value.latitude !== undefined && value.longitude !== undefined ? (
-            <a
-              href={buildGoogleMapsUrl(value.latitude, value.longitude)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1 text-brand-primary hover:underline"
-            >
-              <ExternalLink size={13} aria-hidden />
-              Googleマップで開く
-            </a>
-          ) : null}
+          <a
+            href={buildGoogleMapsUrl(value.latitude as number, value.longitude as number)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-brand-primary hover:underline"
+          >
+            <ExternalLink size={13} aria-hidden />
+            Googleマップで開く
+          </a>
         </div>
       )}
 
-      {/* Pin correction note — shown after drag */}
+      {/* Pin correction memo — shown after drag */}
       {value.pinCorrected && (
         <div>
-          <label htmlFor="pin-correction-note" className="mb-1 block text-sm font-medium text-text-secondary">
-            修正メモ <span className="font-normal text-text-tertiary">(任意)</span>
+          <label
+            htmlFor="pin-correction-note"
+            className="mb-1 block text-sm font-medium text-text-secondary"
+          >
+            修正メモ{' '}
+            <span className="font-normal text-text-tertiary">(任意)</span>
           </label>
           <textarea
             id="pin-correction-note"
@@ -445,7 +480,7 @@ function MapPinSection({
         </div>
       )}
 
-      {/* Pin confirm / confirmed badge */}
+      {/* Pin confirm toggle — below the map, never overlaid */}
       {hasCoords && (
         value.pinConfirmed ? (
           <div className="inline-flex items-center gap-1.5 rounded border border-status-success bg-[#E8F8EE] px-2 py-1 text-xs font-medium text-[#00913A]">
@@ -472,8 +507,6 @@ function MapPinSection({
 // Main AddressForm
 // ---------------------------------------------------------------------------
 export function AddressForm({ value, onChange, errors }: AddressFormProps) {
-  // useRef ensures update() always reads the latest value even when called
-  // from a stale async closure (e.g. the postal-code fetchPostal callback).
   const valueRef = useRef(value);
   valueRef.current = value;
 
