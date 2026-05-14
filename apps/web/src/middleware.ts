@@ -9,7 +9,7 @@ const COOKIE_NAME = 'looop_session';
 const SECRET = process.env.AUTH_SECRET ?? 'looop-crm-dev-secret-please-rotate-in-production';
 
 // 認証不要のパス
-const PUBLIC_PATHS = ['/login', '/api/health', '/api/auth/lark'];
+const PUBLIC_PATHS = ['/login', '/api/health', '/api/auth/lark', '/api/auth/callback'];
 
 async function hmacSha256(key: string, message: string): Promise<string> {
   const enc = new TextEncoder();
