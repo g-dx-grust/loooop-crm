@@ -196,7 +196,7 @@ function AddressFields({
         <Input
           id="street"
           type="text"
-          placeholder="代々木1-2-3"
+          placeholder="例: 3-2-8（市区町村以降の番地のみ）"
           value={street}
           onChange={(e) => onChangeStreet(e.target.value)}
           className="h-10 text-base"
@@ -315,6 +315,7 @@ function MapPinSection({
     }
     setGeoError('');
     setLoading(true);
+    console.log('[geocode] 送信住所:', fullAddress);
     try {
       const res = await fetch('/api/geocode', {
         method: 'POST',
@@ -334,9 +335,17 @@ function MapPinSection({
         // New object reference → MapController pans to this location
         setPanTarget({ lat: data.latitude, lng: data.longitude });
       } else {
-        setGeoError('位置情報の取得に失敗しました。');
+        const errData = (await res.json().catch(() => ({}))) as {
+          googleStatus?: string;
+          googleErrorMessage?: string | null;
+          sentAddress?: string;
+        };
+        console.error('[geocode] エラー応答:', errData);
+        const detail = errData.googleStatus ? ` (Google: ${errData.googleStatus})` : '';
+        setGeoError(`位置情報の取得に失敗しました${detail}。送信住所: ${errData.sentAddress ?? fullAddress}`);
       }
-    } catch {
+    } catch (err) {
+      console.error('[geocode] リクエストエラー:', err);
       setGeoError('位置情報の取得に失敗しました。');
     } finally {
       setLoading(false);
@@ -366,6 +375,14 @@ function MapPinSection({
 
   return (
     <div className="space-y-3">
+      {/* Address preview shown before geocoding */}
+      {fullAddress && (
+        <p className="text-xs text-text-tertiary">
+          <span className="font-medium text-text-secondary">送信住所: </span>
+          {fullAddress}
+        </p>
+      )}
+
       {/* Geocode trigger button */}
       <div className="flex items-center gap-2">
         <Button
@@ -517,7 +534,9 @@ export function AddressForm({ value, onChange, errors }: AddressFormProps) {
     [onChange],
   );
 
-  const fullAddress = [value.prefecture, value.city, value.street, value.building]
+  // Building names (especially English) confuse the geocoder — exclude them.
+  // Prefecture + city (postal auto-fill: address2+address3) + street (番地 only).
+  const fullAddress = [value.prefecture, value.city, value.street]
     .filter(Boolean)
     .join('');
 

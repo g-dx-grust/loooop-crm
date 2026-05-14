@@ -52,15 +52,29 @@ export async function POST(req: NextRequest) {
     const encoded = encodeURIComponent(address);
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&language=ja&region=JP&key=${googleKey}`;
     const res = await fetch(url);
-    const data = (await res.json()) as GoogleGeocodeResponse;
+    const data = (await res.json()) as GoogleGeocodeResponse & { error_message?: string };
+
+    console.log('[geocode] status:', data.status, '| address:', address);
 
     if (data.status !== 'OK' || !data.results[0]) {
-      return NextResponse.json({ error: '住所の位置情報を取得できませんでした。' }, { status: 404 });
+      if (data.error_message) {
+        console.error('[geocode] error_message:', data.error_message);
+      }
+      return NextResponse.json(
+        {
+          error: '住所の位置情報を取得できませんでした。',
+          googleStatus: data.status,
+          googleErrorMessage: data.error_message ?? null,
+          sentAddress: address,
+        },
+        { status: 404 },
+      );
     }
 
     const first = data.results[0];
     const latitude = first.geometry.location.lat;
     const longitude = first.geometry.location.lng;
+    console.log('[geocode] OK → formatted_address:', first.formatted_address);
     const result: GeocodeResult = {
       latitude,
       longitude,
@@ -70,7 +84,8 @@ export async function POST(req: NextRequest) {
       accuracy: 'google',
     };
     return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: 'ジオコーディングに失敗しました。' }, { status: 500 });
+  } catch (err) {
+    console.error('[geocode] fetch error:', err);
+    return NextResponse.json({ error: 'ジオコーディングに失敗しました。', sentAddress: address }, { status: 500 });
   }
 }
