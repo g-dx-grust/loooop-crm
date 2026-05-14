@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const rows = await db
     .select({ id: customers.id, deletedAt: customers.deletedAt })
     .from(customers)
-    .where(eq(customers.phoneEnc, phone))
+    .where(eq(customers.phoneEnc, Buffer.from(phone) as unknown as Buffer))
     .limit(1);
 
   const liveRow = rows.find((r) => r.deletedAt === null || r.deletedAt === undefined);

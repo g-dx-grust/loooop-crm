@@ -63,7 +63,7 @@ export async function getBills(filters: BillFilters): Promise<BillListItem[]> {
         filters.month ? eq(electricityBills.billMonth, filters.month) : undefined,
         filters.paymentMethod ? eq(electricityBills.paymentMethod, filters.paymentMethod) : undefined,
         filters.staffId ? eq(customers.createdBy, filters.staffId) : undefined,
-        filters.refundOnly ? eq(electricityBills.refundFlagged, true) : undefined,
+        filters.refundOnly ? eq(electricityBills.refundFlagged, 1) : undefined,
       ),
     )
     .orderBy(desc(electricityBills.billMonth), desc(electricityBills.updatedAt));

@@ -93,8 +93,8 @@ export async function upsertBill(
           feeAmount: calc.feeAmount,
           adminFee: calc.adminFee,
           netFee: calc.netFee,
-          minimumApplied: calc.minimumApplied,
-          refundFlagged: refundFlag,
+          minimumApplied: calc.minimumApplied ? 1 : 0,
+          refundFlagged: refundFlag ? 1 : 0,
           feeMasterId: calc.feeMasterId,
           note: input.note || null,
           updatedAt: now,
@@ -140,8 +140,8 @@ export async function upsertBill(
         feeAmount: calc.feeAmount,
         adminFee: calc.adminFee,
         netFee: calc.netFee,
-        minimumApplied: calc.minimumApplied,
-        refundFlagged: refundFlag,
+        minimumApplied: calc.minimumApplied ? 1 : 0,
+        refundFlagged: refundFlag ? 1 : 0,
         feeMasterId: calc.feeMasterId,
         note: input.note || null,
         createdAt: now,
@@ -232,7 +232,7 @@ export async function createRefund(
       .returning({ id: refunds.id });
 
     if (input.billId) {
-      await db.update(electricityBills).set({ refundFlagged: true, updatedAt: now }).where(eq(electricityBills.id, input.billId));
+      await db.update(electricityBills).set({ refundFlagged: 1, updatedAt: now }).where(eq(electricityBills.id, input.billId));
     }
 
     await db.insert(auditLogs).values({
