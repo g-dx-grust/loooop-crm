@@ -3,9 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  experimental: {
-    typedRoutes: false,
-  },
+  typedRoutes: false,
   // better-sqlite3 and its native bindings must not be bundled
   serverExternalPackages: ['better-sqlite3', 'bindings', 'node-gyp-build'],
   transpilePackages: ['@looop/db', '@looop/auth', '@looop/audit', '@looop/permissions', '@looop/ui'],
