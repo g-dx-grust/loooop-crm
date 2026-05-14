@@ -1,4 +1,4 @@
-import { db, auditLogs, users, userRoles, roles, events, consentTextVersions, eq, isNull, desc, asc } from '@looop/db';
+import { db, auditLogs, users, userRoles, roles, events, consentTextVersions, eq, and, isNull, desc, asc } from '@looop/db';
 import type { RoleCode } from '@looop/db';
 
 export interface AuditFilters {
@@ -145,7 +145,7 @@ export async function getStaffOptions(): Promise<StaffOption[]> {
   return db
     .select({ id: users.id, displayName: users.displayName })
     .from(users)
-    .where(isNull(users.deletedAt))
+    .where(and(isNull(users.deletedAt), eq(users.status, 'active')))
     .orderBy(asc(users.displayName));
 }
 

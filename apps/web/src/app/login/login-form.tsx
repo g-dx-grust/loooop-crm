@@ -60,7 +60,7 @@ export function LoginForm({ larkError }: { larkError?: string | null }) {
         <span>Lark でログイン</span>
       </a>
       <p className="-mt-3 text-xs text-text-tertiary">
-        社内スタッフはこちら。Lark アカウントで認証します。
+        Lark アカウントをお持ちの社内スタッフはこちら。
       </p>
 
       {/* Divider */}
@@ -132,7 +132,7 @@ export function LoginForm({ larkError }: { larkError?: string | null }) {
       </form>
 
       <p className="text-xs leading-relaxed text-text-tertiary">
-        外部スタッフ・パートナー企業の方はメールアドレスとパスワードでログインしてください。
+        メールアドレスとパスワードが発行されている方はこちら。
         アカウントは管理者が発行します。
       </p>
     </div>

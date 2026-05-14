@@ -27,6 +27,16 @@ export async function passwordLoginAction(formData: FormData): Promise<ActionRes
     return { success: false, error: 'メールアドレスとパスワードを入力してください' };
   }
 
+  // Lark SSO ユーザーはパスワードログイン不可
+  const userCheck = await db
+    .select({ authProvider: users.authProvider })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+  if (userCheck[0]?.authProvider === 'lark') {
+    return { success: false, error: 'このアカウントは Lark でログインしてください。' };
+  }
+
   // 1. Supabase Auth でパスワード照合
   const supabase = await createSupabaseServerClient();
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
