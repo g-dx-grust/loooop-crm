@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { PageHeader } from '@/components/layout/page-header';
 import { getSolarEligibleCustomers, getActivePartners } from './queries';
 import { SolarExportClient } from './solar-export-client';

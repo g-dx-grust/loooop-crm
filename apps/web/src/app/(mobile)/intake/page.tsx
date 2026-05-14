@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getActiveEvents, getLatestConsentText } from './actions';
 import { IntakeWizard } from './intake-wizard';
 

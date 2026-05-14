@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { PageHeader } from '@/components/layout/page-header';
 import { getFeeMaster } from './queries';
 import { FeeMasterClient } from './fee-master-client';

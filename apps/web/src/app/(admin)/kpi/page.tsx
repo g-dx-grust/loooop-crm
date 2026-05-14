@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/format';

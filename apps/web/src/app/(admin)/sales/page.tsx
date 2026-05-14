@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { PageHeader } from '@/components/layout/page-header';
 import { formatYearMonth } from '@/lib/format';
 import { LOOOP_PAYMENT_METHOD_LABELS } from '@/lib/status-labels';

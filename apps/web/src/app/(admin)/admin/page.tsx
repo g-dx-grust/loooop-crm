@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { getCurrentUser } from '@looop/auth';
 import { userHasPermission } from '@looop/permissions';
 import { PageHeader } from '@/components/layout/page-header';
