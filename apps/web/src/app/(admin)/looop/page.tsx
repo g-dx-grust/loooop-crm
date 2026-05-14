@@ -7,17 +7,22 @@ import { LooopStatusTabs } from './status-tabs';
 import { LooopTable } from './looop-table';
 import { LooopActionsBar } from './looop-actions-bar';
 import { formatCurrency } from '@/lib/format';
+import { getCurrentUser } from '@looop/auth';
 
 interface PageProps {
   searchParams: Promise<{ status?: string }>;
 }
 
 export default async function LooopPage({ searchParams }: PageProps) {
-  const params = await searchParams;
+  const [params, currentUser] = await Promise.all([searchParams, getCurrentUser()]);
+  const isField = currentUser?.roleCodes.includes('field') ?? false;
   const statusFilter = params.status ?? '';
 
   const [contracts, summary, customerOptions] = await Promise.all([
-    getLooopContracts({ status: statusFilter || undefined }),
+    getLooopContracts({
+      status: statusFilter || undefined,
+      staffId: isField ? (currentUser?.id ?? '') : undefined,
+    }),
     getLooopSummary(),
     getLooopCustomerOptions(),
   ]);

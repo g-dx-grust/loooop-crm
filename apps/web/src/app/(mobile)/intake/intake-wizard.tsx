@@ -549,6 +549,19 @@ export function IntakeWizard({ events, consentText }: IntakeWizardProps) {
     if (step > 1) setStep((s) => s - 1);
   };
 
+  const handleGoHome = () => {
+    const hasContent =
+      hasDraft ||
+      form.name.trim() ||
+      form.phone.trim() ||
+      form.email.trim() ||
+      form.address.postalCode.trim();
+    if (hasContent) {
+      if (!confirm('入力中のデータは下書きとして保存されています。トップページに戻りますか？')) return;
+    }
+    router.push('/');
+  };
+
   const handleSubmit = async () => {
     if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(step)) return;
     if (!form.consent.personalInfoConsent) return;
@@ -640,6 +653,18 @@ export function IntakeWizard({ events, consentText }: IntakeWizardProps) {
         style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
       >
         <div className="mx-auto flex w-full max-w-2xl gap-3">
+          {step === 1 && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              onClick={handleGoHome}
+              className="flex-1"
+              disabled={submitting}
+            >
+              戻る
+            </Button>
+          )}
           {step > 1 && (
             <Button
               type="button"

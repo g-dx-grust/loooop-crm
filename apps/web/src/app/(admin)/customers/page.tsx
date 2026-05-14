@@ -82,7 +82,7 @@ export default async function CustomersPage({
   searchParams: Promise<SearchParams>;
 }) {
   const [params, currentUser] = await Promise.all([searchParams, getCurrentUser()]);
-  const isPartner = currentUser?.roleCodes.includes('partner') ?? false;
+  const isField = currentUser?.roleCodes.includes('field') ?? false;
 
   const sortField = (['displayId', 'name', 'eventDate', 'updatedAt'] as CustomerSortField[]).includes(
     params.sort as CustomerSortField,
@@ -94,7 +94,7 @@ export default async function CustomersPage({
   const filters = {
     search: params.search,
     eventId: params.eventId,
-    staffId: params.staffId,
+    staffId: isField ? (currentUser?.id ?? '') : params.staffId,
     looopStatus: params.looopStatus,
     pinConfirmed: params.pinConfirmed === '1' ? true : undefined,
     hasConsent: params.hasConsent === '1' ? true : undefined,
@@ -102,7 +102,6 @@ export default async function CustomersPage({
     page: params.page ? Number(params.page) : 1,
     sort: sortField ?? undefined,
     order: sortOrder,
-    partnerOnly: isPartner,
   };
 
   const [{ items, total, page, pageSize }, events, staff] = await Promise.all([

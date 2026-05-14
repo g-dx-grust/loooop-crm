@@ -1,6 +1,6 @@
 // 文字列ベースの enum (PostgreSQL の enum 型を使うとマイグレが面倒なので text + check 制約で運用)
 
-export const ROLE_CODES = ['admin', 'manager', 'field', 'cs', 'finance', 'partner'] as const;
+export const ROLE_CODES = ['admin', 'field'] as const;
 export type RoleCode = (typeof ROLE_CODES)[number];
 
 export const USER_STATUSES = ['active', 'suspended', 'left'] as const;

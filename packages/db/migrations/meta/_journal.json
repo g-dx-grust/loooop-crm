@@ -15,6 +15,20 @@
       "when": 1747094400000,
       "tag": "0001_looop_status_cleanup",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1747094400001,
+      "tag": "0002_user_kana_affiliation",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1747612800000,
+      "tag": "0003_simplify_roles_lark_fields",
+      "breakpoints": true
     }
   ]
 }

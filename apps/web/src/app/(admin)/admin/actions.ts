@@ -145,7 +145,7 @@ export async function createConsentVersion(
 // User & role management
 // ---------------------------------------------------------------------------
 
-const ROLE_CODES_SET = new Set<RoleCode>(['admin', 'manager', 'field', 'cs', 'finance', 'partner']);
+const ROLE_CODES_SET = new Set<RoleCode>(['admin', 'field']);
 
 export interface CreateUserInput {
   displayName: string;

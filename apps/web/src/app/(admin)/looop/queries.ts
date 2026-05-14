@@ -16,6 +16,7 @@ export async function getLooopCustomerOptions(): Promise<LooopCustomerOption[]> 
 
 export interface LooopContractFilters {
   status?: string;
+  staffId?: string;
 }
 
 export interface LooopContractListItem {
@@ -65,6 +66,7 @@ export async function getLooopContracts(filters: LooopContractFilters): Promise<
       and(
         isNull(looopContracts.deletedAt),
         filters.status ? eq(looopContracts.status, filters.status) : undefined,
+        filters.staffId ? eq(leads.staffId, filters.staffId) : undefined,
       ),
     )
     .orderBy(desc(looopContracts.updatedAt));

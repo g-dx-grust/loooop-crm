@@ -6,6 +6,7 @@ import { getCrossSellOpportunities, getCrossSellSummary } from './queries';
 import { CrossSellTable } from './cross-sell-table';
 import { CrossSellFilters } from './filter-chips';
 import { formatCurrency } from '@/lib/format';
+import { getCurrentUser } from '@looop/auth';
 
 interface PageProps {
   searchParams: Promise<{
@@ -17,7 +18,8 @@ interface PageProps {
 }
 
 export default async function CrossSellPage({ searchParams }: PageProps) {
-  const params = await searchParams;
+  const [params, currentUser] = await Promise.all([searchParams, getCurrentUser()]);
+  const isField = currentUser?.roleCodes.includes('field') ?? false;
 
   const [items, summary] = await Promise.all([
     getCrossSellOpportunities({
@@ -25,6 +27,7 @@ export default async function CrossSellPage({ searchParams }: PageProps) {
       status: params.status,
       interestRank: params.interestRank,
       overdue: params.overdue === '1',
+      staffId: isField ? (currentUser?.id ?? '') : undefined,
     }),
     getCrossSellSummary(),
   ]);

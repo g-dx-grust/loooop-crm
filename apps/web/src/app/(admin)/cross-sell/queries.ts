@@ -5,6 +5,7 @@ export interface CrossSellFilters {
   status?: string;
   interestRank?: string;
   overdue?: boolean;
+  staffId?: string;
 }
 
 export interface CrossSellListItem {
@@ -78,6 +79,7 @@ export async function getCrossSellOpportunities(
         filters.interestRank
           ? eq(crossSellOpportunities.interestRank, filters.interestRank)
           : undefined,
+        filters.staffId ? eq(leads.staffId, filters.staffId) : undefined,
       ),
     )
     .orderBy(desc(crossSellOpportunities.updatedAt));

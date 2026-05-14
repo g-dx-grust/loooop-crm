@@ -17,34 +17,17 @@ import {
 } from './actions';
 import type { UserAdminRow } from './queries';
 
-type RoleCode = 'admin' | 'manager' | 'field' | 'cs' | 'finance' | 'partner';
-
-// 追加フォームでは社員/パートナーの2択に簡略化
-const USER_TYPE_OPTIONS = [
-  {
-    value: 'field' as RoleCode,
-    label: '社員',
-    description: '社内スタッフ。催事フォームへのアクセス・顧客の登録・閲覧が可能。',
-  },
-  {
-    value: 'partner' as RoleCode,
-    label: 'パートナー',
-    description: '外部パートナー企業。太陽光連携で共有された顧客データのみ閲覧可能。',
-  },
-] as const;
+type RoleCode = 'admin' | 'field';
 
 const ROLE_OPTIONS: { value: RoleCode; label: string; description: string }[] = [
-  { value: 'admin',   label: '管理者',         description: '全機能の閲覧・変更、ユーザー管理、CSV 出力。' },
-  { value: 'manager', label: 'マネージャー',   description: 'チーム配下の顧客・売上・KPI を閲覧・編集。' },
-  { value: 'field',   label: '現場スタッフ',   description: '催事フォームから自身が登録した顧客を編集。' },
-  { value: 'cs',      label: 'CS担当',         description: '顧客・申込・クロスセル状況を閲覧（編集不可）。' },
-  { value: 'finance', label: '経理・管理',     description: '明細・売上・返還・KPIを参照。' },
-  { value: 'partner', label: 'パートナー',     description: '太陽光連携で共有された顧客のみ閲覧。' },
+  { value: 'admin', label: '管理者',       description: '全機能の閲覧・変更、ユーザー管理、催事マスタ編集、CSV出力。' },
+  { value: 'field', label: '現場スタッフ', description: '催事フォームから自身が担当した顧客・案件のみ閲覧・編集。' },
 ];
 
-const ROLE_LABEL: Record<RoleCode, string> = Object.fromEntries(
-  ROLE_OPTIONS.map((r) => [r.value, r.label]),
-) as Record<RoleCode, string>;
+const ROLE_LABEL: Record<RoleCode, string> = {
+  admin: '管理者',
+  field: '現場スタッフ',
+};
 
 interface Props {
   initialUsers: UserAdminRow[];
@@ -92,7 +75,8 @@ export function UsersSection({ initialUsers }: Props) {
 
   function openEditRole(u: UserAdminRow) {
     setEditRoleUser(u);
-    setEditRoleValue((u.roleCodes[0] ?? 'field') as RoleCode);
+    const code = u.roleCodes[0];
+    setEditRoleValue((code === 'admin' ? 'admin' : 'field') as RoleCode);
   }
 
   function handleSaveRole() {
@@ -152,7 +136,7 @@ export function UsersSection({ initialUsers }: Props) {
         <div className="min-w-0 flex-1">
           <h2 className="text-h1 text-text-primary">ユーザーと権限</h2>
           <p className="mt-0.5 text-xs text-text-secondary">
-            Lark アカウントを持つ社内スタッフは SSO で自動連携。外部スタッフ・パートナー企業はここから発行します。
+            メール＋パスワードでログインするユーザーを発行します。初期パスワードは本人へ別経路でお知らせください。
           </p>
         </div>
         <Button onClick={openCreate} size="md" className="shrink-0 whitespace-nowrap">
@@ -182,7 +166,7 @@ export function UsersSection({ initialUsers }: Props) {
               </tr>
             ) : (
               initialUsers.map((u) => {
-                const role = (u.roleCodes[0] ?? null) as RoleCode | null;
+                const roleCode = u.roleCodes[0] as RoleCode | undefined;
                 return (
                   <tr key={u.id} className="h-10 border-b border-border last:border-b-0 hover:bg-bg-subtle">
                     <td className="whitespace-nowrap px-4 font-medium text-text-primary">{u.displayName}</td>
@@ -195,8 +179,8 @@ export function UsersSection({ initialUsers }: Props) {
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4">
-                      {role ? (
-                        <span className="text-text-primary">{ROLE_LABEL[role]}</span>
+                      {roleCode ? (
+                        <span className="text-text-primary">{ROLE_LABEL[roleCode] ?? roleCode}</span>
                       ) : (
                         <span className="text-text-tertiary">未設定</span>
                       )}
@@ -249,11 +233,6 @@ export function UsersSection({ initialUsers }: Props) {
         }
       >
         <div className="space-y-4">
-          <p className="rounded border border-border bg-bg-subtle px-3 py-2 text-xs leading-relaxed text-text-secondary">
-            メール+パスワードでログインするユーザーを発行します。
-            初期パスワードを本人へ別経路（口頭・社内チャット）でお知らせください。
-          </p>
-
           <div>
             <Label htmlFor="new-user-name" required>氏名</Label>
             <Input
@@ -313,14 +292,14 @@ export function UsersSection({ initialUsers }: Props) {
               onChange={(e) => setForm((f) => ({ ...f, roleCode: e.target.value as RoleCode }))}
               className="mt-1 flex h-9 w-full rounded border border-border bg-white px-3 py-1 text-sm text-text-primary focus-visible:border-brand-primary focus-visible:outline-none"
             >
-              {USER_TYPE_OPTIONS.map((r) => (
+              {ROLE_OPTIONS.map((r) => (
                 <option key={r.value} value={r.value}>
                   {r.label}
                 </option>
               ))}
             </select>
             <p className="mt-1 text-xs leading-relaxed text-text-tertiary">
-              {USER_TYPE_OPTIONS.find((r) => r.value === form.roleCode)?.description}
+              {ROLE_OPTIONS.find((r) => r.value === form.roleCode)?.description}
             </p>
           </div>
           <div>

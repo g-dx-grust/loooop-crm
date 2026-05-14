@@ -19,6 +19,10 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  // Lark SSO 紐付け用。Lark ログイン時に email 一致で既存ユーザーに紐付ける
+  larkUserId: text('lark_user_id'),
+  larkEmail: text('lark_email'),
+  larkName: text('lark_name'),
 }, (t) => [
   index('users_status_idx').on(t.status),
 ]);
