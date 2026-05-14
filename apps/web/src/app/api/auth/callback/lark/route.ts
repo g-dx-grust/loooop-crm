@@ -44,6 +44,8 @@ export async function GET(req: NextRequest) {
       const redirectUri =
         process.env.LARK_REDIRECT_URI ?? `${origin}/api/auth/callback/lark`;
 
+      console.log('[lark-callback] clientId present:', !!clientId, '/ redirectUri:', redirectUri);
+
       if (!clientId || !clientSecret) {
         return NextResponse.redirect(new URL('/login?error=lark_config', origin));
       }
@@ -65,15 +67,18 @@ export async function GET(req: NextRequest) {
       );
 
       if (!tokenRes.ok) {
+        console.error('[lark-callback] token HTTP error:', tokenRes.status, await tokenRes.text().catch(() => ''));
         return NextResponse.redirect(new URL('/login?error=lark_token', origin));
       }
 
       const tokenData = (await tokenRes.json()) as {
         code: number;
+        msg?: string;
         data?: { access_token?: string };
       };
 
       if (tokenData.code !== 0 || !tokenData.data?.access_token) {
+        console.error('[lark-callback] token error: code=', tokenData.code, 'msg=', tokenData.msg);
         return NextResponse.redirect(new URL('/login?error=lark_token', origin));
       }
 
@@ -142,7 +147,8 @@ export async function GET(req: NextRequest) {
 
     const destination = next.startsWith('/') ? next : '/customers';
     return NextResponse.redirect(new URL(destination, origin));
-  } catch {
+  } catch (err) {
+    console.error('[lark-callback] unexpected error:', err);
     return NextResponse.redirect(new URL('/login?error=lark_error', origin));
   }
 }
