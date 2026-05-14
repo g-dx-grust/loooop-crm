@@ -12,7 +12,7 @@ const LARK_ERRORS: Record<string, string> = {
   lark_token:   'Lark からトークンを取得できませんでした。再度お試しください。',
   lark_userinfo:'Lark からユーザー情報を取得できませんでした。再度お試しください。',
   lark_no_email:'Lark アカウントのメールアドレスを取得できませんでした。',
-  lark_not_found:'このアカウントは登録されていません。管理者にお問い合わせください。',
+  lark_not_found:'登録されていないLarkアカウントです。管理者に確認してください。',
   lark_error:   'Lark ログイン中にエラーが発生しました。再度お試しください。',
 };
 

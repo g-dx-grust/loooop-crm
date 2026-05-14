@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
 
   try {
     let userEmail: string | null = null;
+    let larkOpenId: string | null = null;
+    let larkName: string | null = null;
 
     if (isMock) {
       userEmail = process.env.STUB_LARK_EMAIL ?? 'kawaguchi@n-grust.co.jp';
@@ -104,6 +106,8 @@ export async function GET(req: NextRequest) {
       // enterprise_email を優先（社内ドメインのメール）
       userEmail =
         userData.data?.enterprise_email ?? userData.data?.email ?? null;
+      larkOpenId = userData.data?.open_id ?? null;
+      larkName = userData.data?.name ?? null;
     }
 
     if (!userEmail) {
@@ -121,6 +125,18 @@ export async function GET(req: NextRequest) {
     if (!u || u.deletedAt || u.status !== 'active') {
       return NextResponse.redirect(new URL('/login?error=lark_not_found', origin));
     }
+
+    // Lark 情報を DB に保存（初回ログイン時に紐付け）
+    await db
+      .update(users)
+      .set({
+        authProvider: 'lark',
+        larkEmail: userEmail.toLowerCase(),
+        ...(larkOpenId ? { larkUserId: larkOpenId } : {}),
+        ...(larkName ? { larkName } : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, u.id));
 
     await createSessionForUser(u.id);
 
