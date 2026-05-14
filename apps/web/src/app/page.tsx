@@ -1,5 +1,8 @@
 import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@looop/auth';
 
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
+  if (!user) redirect('/login');
   redirect('/customers');
 }

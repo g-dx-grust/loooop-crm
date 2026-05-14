@@ -2,17 +2,33 @@
 // Do NOT import from @looop/db here (Node.js only)
 
 export const LOOOP_STATUSES = [
-  'not_proposed',
-  'proposed',
-  'interested',
   'applied',
-  'under_review',
-  'contracted',
-  'opened',
   'cancelled',
-  'excluded',
+  'matching_error',
+  'terminated',
+  'completed',
 ] as const;
 export type LooopStatus = (typeof LOOOP_STATUSES)[number];
+
+export const LOOOP_PLAN_CODES = ['smart_time_one_lighting'] as const;
+export type LooopPlanCode = (typeof LOOOP_PLAN_CODES)[number];
+
+export const LOOOP_PAYMENT_METHODS = ['bank_account', 'other'] as const;
+export type LooopPaymentMethod = (typeof LOOOP_PAYMENT_METHODS)[number];
+
+export const REFUND_REASONS = [
+  'application_cancelled',
+  'early_termination',
+  'fraud',
+  'forced_enrollment',
+  'short_term_inducement',
+  'rule_violation',
+  'other',
+] as const;
+export type RefundReason = (typeof REFUND_REASONS)[number];
+
+/** 業務管理費（税別） — 仕様書 §5 */
+export const ADMIN_FEE_DEFAULT = 2000;
 
 export const CROSS_SELL_STATUSES = [
   'not_proposed',

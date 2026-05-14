@@ -3,8 +3,10 @@ import Link from 'next/link';
 import { Plus, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Search } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
+import { getCurrentUser } from '@looop/auth';
 import { CustomerFilters } from './customer-filters';
 import { CustomerTableClient } from './customer-table-client';
+import { CustomerMobileList } from './customer-mobile-list';
 import { getCustomers, getEvents, getStaff, type CustomerSortField, type SortOrder } from './queries';
 
 interface SearchParams {
@@ -78,7 +80,8 @@ export default async function CustomersPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const params = await searchParams;
+  const [params, currentUser] = await Promise.all([searchParams, getCurrentUser()]);
+  const isPartner = currentUser?.roleCodes.includes('partner') ?? false;
 
   const sortField = (['displayId', 'name', 'eventDate', 'updatedAt'] as CustomerSortField[]).includes(
     params.sort as CustomerSortField,
@@ -98,6 +101,7 @@ export default async function CustomersPage({
     page: params.page ? Number(params.page) : 1,
     sort: sortField ?? undefined,
     order: sortOrder,
+    partnerOnly: isPartner,
   };
 
   const [{ items, total, page, pageSize }, events, staff] = await Promise.all([
@@ -130,7 +134,7 @@ export default async function CustomersPage({
         <CustomerFilters events={events} staff={staff} />
       </Suspense>
 
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         {/* Result count */}
         <div className="mb-3">
           <p className="text-xs text-text-tertiary tabular-nums">
@@ -138,9 +142,14 @@ export default async function CustomersPage({
           </p>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto rounded-lg border border-border bg-white">
-          <table className="w-full min-w-[1240px] border-collapse text-sm">
+        {/* Mobile card list (< lg) */}
+        <div className="lg:hidden">
+          <CustomerMobileList items={items} hasActiveFilters={hasActiveFilters} />
+        </div>
+
+        {/* Table (≥ lg) */}
+        <div className="hidden overflow-x-auto rounded-lg border border-border bg-white lg:block">
+          <table className="w-full min-w-[1360px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-border bg-bg-subtle">
                 {/* checkbox placeholder — managed by client component */}
@@ -149,6 +158,7 @@ export default async function CustomersPage({
                 <SortTh label="お客様名" field="name"      currentSort={sortField} currentOrder={sortOrder} params={params} />
                 <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">電話番号</th>
                 <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">メール / 生年月日</th>
+                <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">住所</th>
                 <SortTh label="催事日 / 会場" field="eventDate" currentSort={sortField} currentOrder={sortOrder} params={params} />
                 <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">でんき情報</th>
                 <th className="h-9 px-3 text-left text-xs font-semibold text-text-secondary">担当者</th>
@@ -161,7 +171,7 @@ export default async function CustomersPage({
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-16 text-center">
+                  <td colSpan={13} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <Search className="size-8 text-text-disabled" aria-hidden />
                       <p className="text-sm text-text-secondary">条件に一致する顧客が見つかりません</p>

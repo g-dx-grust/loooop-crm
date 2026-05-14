@@ -1,5 +1,19 @@
 import { db, looopContracts, customers, leads, events, users, eq, and, isNull, desc } from '@looop/db';
 
+export interface LooopCustomerOption {
+  id: string;
+  name: string;
+}
+
+export async function getLooopCustomerOptions(): Promise<LooopCustomerOption[]> {
+  const rows = await db
+    .select({ id: customers.id, name: customers.name })
+    .from(customers)
+    .where(isNull(customers.deletedAt))
+    .orderBy(customers.name);
+  return rows.map((r) => ({ id: r.id, name: r.name }));
+}
+
 export interface LooopContractFilters {
   status?: string;
 }
@@ -90,21 +104,21 @@ export async function getLooopSummary(): Promise<LooopSummary> {
   let thisMonthRevenue = 0;
 
   for (const row of all) {
-    // 今月の申込数: applicationDate が今月のもの (applied/contracted/opened)
+    // 今月の申込数: applicationDate が今月のもの (applied/completed)
     if (
       row.applicationDate &&
       row.applicationDate >= ymStart &&
       row.applicationDate < nextMonthStart(ym) &&
-      ['applied', 'contracted', 'opened'].includes(row.status)
+      ['applied', 'completed'].includes(row.status)
     ) {
       thisMonthApplications++;
     }
-    // 今月の開通数: openedDate が今月のもの
+    // 今月の完了数: openedDate が今月のもの
     if (
       row.openedDate &&
       row.openedDate >= ymStart &&
       row.openedDate < nextMonthStart(ym) &&
-      row.status === 'opened'
+      row.status === 'completed'
     ) {
       thisMonthOpened++;
       thisMonthRevenue += row.unitPrice;

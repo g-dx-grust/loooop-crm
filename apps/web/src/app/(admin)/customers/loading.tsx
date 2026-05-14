@@ -27,7 +27,7 @@ export default function CustomersLoading() {
       />
 
       {/* Filter bar skeleton */}
-      <div className="flex items-center gap-2 border-b border-border bg-bg-base px-6 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-bg-base px-4 py-3 lg:px-6">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-7 w-20" />
         <Skeleton className="h-7 w-24" />
@@ -35,7 +35,7 @@ export default function CustomersLoading() {
         <Skeleton className="ml-auto h-8 w-24" />
       </div>
 
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         <Skeleton className="mb-3 h-4 w-12" />
 
         <div className="overflow-hidden rounded-lg border border-border bg-white">

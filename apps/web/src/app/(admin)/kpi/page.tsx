@@ -80,13 +80,10 @@ interface SummaryCardProps {
 
 function SummaryCard({ label, value, unit, delta }: SummaryCardProps) {
   return (
-    <Card className="flex flex-col gap-1">
+    <Card className="flex flex-col gap-1 p-3 lg:p-5">
       <div className="text-xs text-text-tertiary">{label}</div>
       <div className="flex items-baseline gap-1">
-        <span
-          className="tabular-nums text-text-primary"
-          style={{ fontSize: '24px', lineHeight: '32px', fontWeight: 600 }}
-        >
+        <span className="tabular-nums text-h1 text-text-primary lg:text-[24px] lg:leading-8">
           {value}
         </span>
         {unit ? <span className="text-sm font-normal text-text-tertiary">{unit}</span> : null}
@@ -150,14 +147,14 @@ export default async function KpiPage({ searchParams }: PageProps) {
         action={<MonthPicker currentMonth={selectedMonth} months={selectableMonths} />}
       />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 p-4 lg:space-y-6 lg:p-6">
         {/* Selected month label */}
         <p className="text-xs text-text-tertiary">
           集計期間: {formatMonthLabel(selectedMonth)}
         </p>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <SummaryCard
             label="申込数"
             value={summary.thisMonth.applications.toLocaleString('ja-JP')}
@@ -178,7 +175,7 @@ export default async function KpiPage({ searchParams }: PageProps) {
         </div>
 
         {/* Charts row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* 申込数 + 開通数 */}
           <Card>
             <CardHeader>
@@ -217,7 +214,7 @@ export default async function KpiPage({ searchParams }: PageProps) {
           </Card>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>月間電気料金帯</CardTitle>

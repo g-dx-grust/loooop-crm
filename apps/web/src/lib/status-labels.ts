@@ -1,27 +1,38 @@
 import type { BadgeTone } from '@/components/ui/badge';
 
 export const LOOOP_STATUS_LABELS: Record<string, string> = {
-  not_proposed: '未提案',
-  proposed: '提案済み',
-  interested: '興味あり',
-  applied: '申込済み',
-  under_review: '審査中',
-  contracted: '契約完了',
-  opened: '開通完了',
-  cancelled: 'キャンセル',
-  excluded: '対象外',
+  applied:        '申込済',
+  cancelled:      'キャンセル',
+  matching_error: 'マッチングエラー',
+  terminated:     '解約',
+  completed:      '完了',
 };
 
 export const LOOOP_STATUS_TONE: Record<string, BadgeTone> = {
-  not_proposed: 'neutral',
-  excluded:     'neutral',
-  proposed:     'warning',
-  interested:   'warning',
-  applied:      'info',
-  under_review: 'info',
-  contracted:   'success',
-  opened:       'success',
-  cancelled:    'error',
+  applied:        'info',
+  cancelled:      'error',
+  matching_error: 'error',
+  terminated:     'neutral',
+  completed:      'success',
+};
+
+export const LOOOP_PAYMENT_METHOD_LABELS: Record<string, string> = {
+  bank_account: '口座',
+  other: '上記以外',
+};
+
+export const LOOOP_PLAN_LABELS: Record<string, string> = {
+  smart_time_one_lighting: 'スマートタイムONE（電灯）',
+};
+
+export const REFUND_REASON_LABELS: Record<string, string> = {
+  application_cancelled: '申込キャンセル',
+  early_termination: '6ヶ月以内解約',
+  fraud: '不正取得',
+  forced_enrollment: '強制入会',
+  short_term_inducement: '短期解約誘導',
+  rule_violation: 'ルール違反',
+  other: 'その他',
 };
 
 export const CROSS_SELL_STATUS_LABELS: Record<string, string> = {

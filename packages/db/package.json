@@ -10,7 +10,7 @@
     "studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
     "seed": "tsx src/run-seed.ts",
-    "db:reset": "rm -f .local-db/looop.db && tsx src/run-seed.ts"
+    "db:reset": "rm -f ../../.local-db/looop.db ../../.local-db/looop.db-shm ../../.local-db/looop.db-wal && tsx src/run-seed.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.9.0",

@@ -156,7 +156,7 @@ export function SolarExportClient({ customers: eligibleCustomers, partners }: Pr
   return (
     <>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-border px-6 py-3">
+      <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 lg:px-6">
         <span className="text-xs text-text-tertiary tabular-nums">
           対象 {eligibleCustomers.length.toLocaleString('ja-JP')} 件
         </span>
@@ -199,7 +199,7 @@ export function SolarExportClient({ customers: eligibleCustomers, partners }: Pr
       </div>
 
       {/* Table */}
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         {eligibleCustomers.length === 0 ? (
           <div className="rounded-lg border border-border bg-white py-16 text-center">
             <p className="text-sm text-text-tertiary">

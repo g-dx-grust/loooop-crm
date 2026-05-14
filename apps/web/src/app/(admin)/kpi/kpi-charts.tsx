@@ -146,7 +146,7 @@ interface MonthPickerProps {
 
 export function MonthPicker({ currentMonth, months }: MonthPickerProps) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="-mx-1 flex items-center gap-1 overflow-x-auto px-1">
       {months.map((ym) => {
         const [year, month] = ym.split('-');
         const label = `${year}年${parseInt(month ?? '1', 10)}月`;
@@ -156,7 +156,7 @@ export function MonthPicker({ currentMonth, months }: MonthPickerProps) {
             key={ym}
             href={`?month=${ym}`}
             className={cn(
-              'rounded px-2.5 py-1 text-xs transition-colors',
+              'shrink-0 whitespace-nowrap rounded px-2.5 py-1 text-xs transition-colors',
               isActive
                 ? 'bg-brand-primarySoft text-brand-primary font-semibold'
                 : 'text-text-secondary hover:bg-bg-subtle',

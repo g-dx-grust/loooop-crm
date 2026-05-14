@@ -19,18 +19,31 @@ export const OWNERSHIP_TYPES = ['owned', 'rented', 'family', 'unknown'] as const
 export const LEAD_STATUSES = ['new', 'contacted', 'qualified', 'disqualified'] as const;
 
 export const LOOOP_STATUSES = [
-  'not_proposed',
-  'proposed',
-  'interested',
   'applied',
-  'under_review',
-  'contracted',
-  'opened',
   'cancelled',
-  'excluded',
+  'matching_error',
+  'terminated',
+  'completed',
 ] as const;
 
 export const PAYMENT_STATUSES = ['unbilled', 'billed', 'paid'] as const;
+
+export const LOOOP_PLAN_CODES = ['smart_time_one_lighting'] as const;
+export type LooopPlanCode = (typeof LOOOP_PLAN_CODES)[number];
+
+export const LOOOP_PAYMENT_METHODS = ['bank_account', 'other'] as const;
+export type LooopPaymentMethod = (typeof LOOOP_PAYMENT_METHODS)[number];
+
+export const REFUND_REASONS = [
+  'application_cancelled',
+  'early_termination',
+  'fraud',
+  'forced_enrollment',
+  'short_term_inducement',
+  'rule_violation',
+  'other',
+] as const;
+export type RefundReason = (typeof REFUND_REASONS)[number];
 
 export const PRODUCT_TYPES = ['hikari', 'water', 'mobile', 'solar', 'battery'] as const;
 export const INTEREST_RANKS = ['A', 'B', 'C'] as const;

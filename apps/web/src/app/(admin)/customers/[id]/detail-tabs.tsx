@@ -30,13 +30,13 @@ export function DetailTabs({ panels }: DetailTabsProps) {
   return (
     <div className="flex min-h-0 flex-col">
       {/* Tab bar */}
-      <div className="flex border-b border-border bg-bg-base">
+      <div className="flex overflow-x-auto border-b border-border bg-bg-base">
         {TAB_KEYS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={cn(
-              'relative h-10 px-4 text-sm transition-colors',
+              'relative h-10 shrink-0 whitespace-nowrap px-4 text-sm transition-colors',
               activeTab === tab
                 ? 'text-brand-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-brand-primary'
                 : 'text-text-secondary hover:bg-bg-subtle hover:text-text-primary',
@@ -48,7 +48,7 @@ export function DetailTabs({ panels }: DetailTabsProps) {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto p-5">{activePanel?.content}</div>
+      <div className="flex-1 overflow-y-auto p-4 lg:p-5">{activePanel?.content}</div>
     </div>
   );
 }

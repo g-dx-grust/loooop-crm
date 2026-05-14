@@ -4,6 +4,7 @@ export * from './events';
 export * from './customers';
 export * from './leads';
 export * from './looop';
+export * from './billing';
 export * from './cross-sell';
 export * from './consent';
 export * from './partner';

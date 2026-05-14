@@ -40,8 +40,8 @@ export function LooopTable({ contracts }: Props) {
 
   function handleSave() {
     if (!selectedId) return;
-    if (newStatus === 'cancelled' && !reason.trim()) {
-      setError('キャンセル理由を入力してください');
+    if ((newStatus === 'cancelled' || newStatus === 'terminated') && !reason.trim()) {
+      setError('理由を入力してください');
       return;
     }
     setError('');
@@ -57,7 +57,59 @@ export function LooopTable({ contracts }: Props) {
 
   return (
     <>
-      <div className="overflow-x-auto">
+      {/* Mobile card list (< lg) */}
+      <ul className="space-y-2 p-3 lg:hidden">
+        {contracts.length === 0 ? (
+          <li className="rounded border border-border bg-white py-8 text-center text-sm text-text-tertiary">
+            データがありません
+          </li>
+        ) : (
+          contracts.map((contract) => (
+            <li key={contract.id}>
+              <button
+                type="button"
+                onClick={() => openSheet(contract)}
+                className="w-full rounded-lg border border-border bg-white p-3 text-left transition-colors active:bg-bg-subtle"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-text-primary">
+                      {contract.customerName}
+                    </p>
+                    {contract.eventName ? (
+                      <p className="mt-0.5 truncate text-xs text-text-tertiary">
+                        {contract.eventName}
+                      </p>
+                    ) : null}
+                  </div>
+                  <Badge tone={LOOOP_STATUS_TONE[contract.status] ?? 'neutral'}>
+                    {LOOOP_STATUS_LABELS[contract.status] ?? contract.status}
+                  </Badge>
+                </div>
+                <dl className="mt-2.5 grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-xs">
+                  <dt className="text-text-tertiary">担当</dt>
+                  <dd className="truncate text-text-secondary">{contract.staffName ?? '—'}</dd>
+                  <dt className="text-text-tertiary">申込日</dt>
+                  <dd className="tabular-nums text-text-secondary">{formatDate(contract.applicationDate)}</dd>
+                  <dt className="text-text-tertiary">売上単価</dt>
+                  <dd className="tabular-nums text-text-primary">{formatCurrency(contract.unitPrice)}</dd>
+                  <dt className="text-text-tertiary">計上月</dt>
+                  <dd className="tabular-nums text-text-secondary">{formatYearMonth(contract.revenueMonth)}</dd>
+                </dl>
+                <div className="mt-2.5 flex items-center justify-between border-t border-border pt-2 text-xs">
+                  <span className="text-text-tertiary">入金</span>
+                  <Badge tone={PAYMENT_STATUS_TONE[contract.paymentStatus] ?? 'neutral'}>
+                    {PAYMENT_STATUS_LABELS[contract.paymentStatus] ?? contract.paymentStatus}
+                  </Badge>
+                </div>
+              </button>
+            </li>
+          ))
+        )}
+      </ul>
+
+      {/* Desktop table (≥ lg) */}
+      <div className="hidden overflow-x-auto lg:block">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-border bg-bg-subtle text-xs text-text-secondary">
@@ -161,10 +213,10 @@ export function LooopTable({ contracts }: Props) {
             </select>
           </div>
 
-          {newStatus === 'cancelled' && (
+          {(newStatus === 'cancelled' || newStatus === 'terminated') && (
             <div>
               <Label htmlFor="cancel-reason" required>
-                キャンセル理由
+                {newStatus === 'cancelled' ? 'キャンセル理由' : '解約理由'}
               </Label>
               <textarea
                 id="cancel-reason"

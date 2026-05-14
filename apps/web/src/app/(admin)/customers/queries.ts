@@ -54,6 +54,8 @@ export interface CustomerFilters {
   includeCancelled?: boolean;
   sort?: CustomerSortField;
   order?: SortOrder;
+  // When true, restrict to customers that have been handed off to a partner
+  partnerOnly?: boolean;
 }
 
 export interface CustomerListItem {
@@ -64,6 +66,7 @@ export interface CustomerListItem {
   phoneEnc: string; // masked by caller
   emailEnc: string | null;
   birthDate: string | null;
+  postalCode: string | null;
   city: string | null;
   eventDate: string | null;
   eventName: string | null;
@@ -152,6 +155,7 @@ export async function getCustomers(filters: CustomerFilters): Promise<{
       emailEnc: customers.emailEnc,
       birthDate: customers.birthDate,
       updatedAt: customers.updatedAt,
+      postalCode: customerAddresses.postalCode,
       city: customerAddresses.city,
       pinConfirmed: customerAddresses.pinConfirmed,
       eventName: events.eventName,
@@ -239,14 +243,26 @@ export async function getCustomers(filters: CustomerFilters): Promise<{
     );
   }
 
+  if (filters.partnerOnly === true) {
+    // Partners can only see customers that have been handed off to a partner company.
+    // The schema has no user→partnerCompany link, so we restrict to any handed-off customer.
+    const handoffRows = await db
+      .selectDistinct({ customerId: partnerHandoffs.customerId })
+      .from(partnerHandoffs)
+      .where(isNull(partnerHandoffs.deletedAt));
+    const handoffCustomerIds = new Set(handoffRows.map((r) => r.customerId));
+    filtered = filtered.filter((r) => handoffCustomerIds.has(r.id));
+  }
+
   const items: CustomerListItem[] = filtered.map((r) => ({
     id: r.id,
     displayId: r.displayId,
     name: r.name,
     kana: r.kana,
-    phoneEnc: r.phoneEnc,
-    emailEnc: r.emailEnc ?? null,
+    phoneEnc: r.phoneEnc instanceof Uint8Array ? Buffer.from(r.phoneEnc).toString('utf8') : r.phoneEnc,
+    emailEnc: r.emailEnc instanceof Uint8Array ? Buffer.from(r.emailEnc).toString('utf8') : (r.emailEnc ?? null),
     birthDate: r.birthDate ?? null,
+    postalCode: r.postalCode ?? null,
     city: r.city ?? null,
     eventDate: r.eventDate ?? null,
     eventName: r.eventName ?? null,

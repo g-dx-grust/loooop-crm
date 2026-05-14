@@ -47,7 +47,7 @@ function Sheet({ open, onClose, children, title }: SheetProps) {
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal aria-label={title}>
       {/* backdrop */}
       <div className="absolute inset-0 bg-black/20" onClick={onClose} />
-      <aside className="relative z-10 flex h-full w-96 flex-col border-l border-border bg-bg-base shadow-overlay">
+      <aside className="relative z-10 flex h-full w-full max-w-[420px] flex-col border-l border-border bg-bg-base shadow-overlay sm:w-96">
         <div className="flex h-12 items-center justify-between border-b border-border px-4">
           <span className="text-h1 text-text-primary">{title}</span>
           <button
@@ -148,9 +148,9 @@ export function CustomerFilters({ events, staff }: CustomerFiltersProps) {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-bg-base px-6 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-bg-base px-4 py-3 lg:px-6">
         {/* Search */}
-        <div className="relative flex w-64 items-center">
+        <div className="relative flex w-full items-center sm:w-64">
           <Search className="absolute left-2.5 size-4 text-text-tertiary" aria-hidden />
           <Input
             type="search"
@@ -282,13 +282,9 @@ export function CustomerFilters({ events, staff }: CustomerFiltersProps) {
 
 // Looop status Japanese labels
 export const LOOOP_STATUS_LABELS: Record<string, string> = {
-  not_proposed: '未提案',
-  proposed: '提案済み',
-  interested: '興味あり',
-  applied: '申込済み',
-  under_review: '審査中',
-  contracted: '契約完了',
-  opened: '開通済み',
-  cancelled: 'キャンセル',
-  excluded: '対象外',
+  applied:        '申込済',
+  cancelled:      'キャンセル',
+  matching_error: 'マッチングエラー',
+  terminated:     '解約',
+  completed:      '完了',
 };

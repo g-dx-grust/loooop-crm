@@ -20,6 +20,10 @@ export const users = sqliteTable('users', {
   phone: text('phone'),
   teamId: text('team_id'),
   status: text('status').notNull().default('active'),
+  // 認証方式。'lark' = Lark SSO（社内）/ 'password' = メール+パスワード（外部・パートナー）
+  authProvider: text('auth_provider').notNull().default('password'),
+  // scrypt ハッシュ。'salt:hex' 形式。Lark ユーザーは null
+  passwordHash: text('password_hash'),
   joinedAt: integer('joined_at', { mode: 'timestamp' }),
   leftAt: integer('left_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
@@ -89,6 +93,8 @@ export const customers = sqliteTable('customers', {
   ageRange: text('age_range'),
   householdInfo: text('household_info'),
   preferredContactTime: text('preferred_contact_time'),
+  currentMobileCarrier: text('current_mobile_carrier'),
+  currentWifiCarrier: text('current_wifi_carrier'),
   memo: text('memo'),
   createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
@@ -148,7 +154,12 @@ export const looopContracts = sqliteTable('looop_contracts', {
   monthlyElectricBill: integer('monthly_electric_bill'),
   wattage: integer('wattage'),
   billUsageMonth: text('bill_usage_month'),
-  status: text('status').notNull().default('not_proposed'),
+  planCode: text('plan_code').notNull().default('smart_time_one_lighting'),
+  paymentMethod: text('payment_method').notNull().default('bank_account'),
+  supplyStartDate: text('supply_start_date'),
+  terminationDate: text('termination_date'),
+  memo: text('memo'),
+  status: text('status').notNull().default('applied'),
   applicationDate: text('application_date'),
   contractDate: text('contract_date'),
   openedDate: text('opened_date'),
@@ -157,6 +168,75 @@ export const looopContracts = sqliteTable('looop_contracts', {
   unitPrice: integer('unit_price').notNull().default(30000),
   revenueMonth: text('revenue_month'),
   paymentStatus: text('payment_status').notNull().default('unbilled'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+});
+
+// ---------------------------------------------------------------------------
+// electricity_bills (明細管理) — 仕様書 §3
+// ---------------------------------------------------------------------------
+export const electricityBills = sqliteTable('electricity_bills', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  customerId: text('customer_id').notNull().references(() => customers.id, { onDelete: 'restrict' }),
+  contractId: text('contract_id').references(() => looopContracts.id, { onDelete: 'set null' }),
+  billMonth: text('bill_month').notNull(),
+  usageKwh: integer('usage_kwh'),
+  electricFee: integer('electric_fee'),
+  paymentMethod: text('payment_method').notNull(),
+  planCode: text('plan_code').notNull().default('smart_time_one_lighting'),
+  applicationMonth: text('application_month'),
+  contractMonth: text('contract_month'),
+  supplyStartDate: text('supply_start_date'),
+  expectedPaymentMonth: text('expected_payment_month'),
+  paidAmount: integer('paid_amount'),
+  feeAmount: integer('fee_amount').notNull(),
+  adminFee: integer('admin_fee').notNull().default(2000),
+  netFee: integer('net_fee').notNull(),
+  minimumApplied: integer('minimum_applied', { mode: 'boolean' }).notNull().default(false),
+  refundFlagged: integer('refund_flagged', { mode: 'boolean' }).notNull().default(false),
+  feeMasterId: text('fee_master_id'),
+  note: text('note'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+});
+
+// ---------------------------------------------------------------------------
+// fee_master (手数料マスター) — 仕様書 §4, §13
+// ---------------------------------------------------------------------------
+export const feeMaster = sqliteTable('fee_master', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  planCode: text('plan_code').notNull(),
+  paymentMethod: text('payment_method').notNull(),
+  kwhMin: integer('kwh_min').notNull(),
+  kwhMax: integer('kwh_max'),
+  feeAmount: integer('fee_amount').notNull(),
+  adminFee: integer('admin_fee').notNull().default(2000),
+  effectiveFrom: text('effective_from').notNull(),
+  effectiveTo: text('effective_to'),
+  note: text('note'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+// ---------------------------------------------------------------------------
+// refunds (返還管理) — 仕様書 §7
+// ---------------------------------------------------------------------------
+export const refunds = sqliteTable('refunds', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  customerId: text('customer_id').notNull().references(() => customers.id, { onDelete: 'restrict' }),
+  contractId: text('contract_id').references(() => looopContracts.id, { onDelete: 'set null' }),
+  billId: text('bill_id').references(() => electricityBills.id, { onDelete: 'set null' }),
+  reasonCode: text('reason_code').notNull(),
+  cancelDate: text('cancel_date'),
+  terminationDate: text('termination_date'),
+  supplyStartDate: text('supply_start_date'),
+  refundMonth: text('refund_month'),
+  refundAmount: integer('refund_amount').notNull(),
+  note: text('note'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   deletedAt: integer('deleted_at', { mode: 'timestamp' }),
@@ -321,6 +401,9 @@ export type CustomerRow = typeof customers.$inferSelect;
 export type CustomerAddressRow = typeof customerAddresses.$inferSelect;
 export type LeadRow = typeof leads.$inferSelect;
 export type LooopContractRow = typeof looopContracts.$inferSelect;
+export type ElectricityBillRow = typeof electricityBills.$inferSelect;
+export type FeeMasterRow = typeof feeMaster.$inferSelect;
+export type RefundRow = typeof refunds.$inferSelect;
 export type CrossSellRow = typeof crossSellOpportunities.$inferSelect;
 export type ConsentRow = typeof consents.$inferSelect;
 export type PartnerCompanyRow = typeof partnerCompanies.$inferSelect;

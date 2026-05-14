@@ -17,11 +17,24 @@ export type Permission =
   | 'customer.delete'
   | 'csv.export'
   | 'admin.manage_users'
+  | 'event.manage'
   | 'kpi.view.team'
   | 'kpi.view.all'
   | 'consent.grant'
   | 'consent.withdraw'
-  | 'partner.handoff';
+  | 'partner.handoff'
+  // ナビゲーション用 (サイドバーの表示制御)
+  | 'nav.intake'
+  | 'nav.customers'
+  | 'nav.looop'
+  | 'nav.bills'
+  | 'nav.refunds'
+  | 'nav.cross_sell'
+  | 'nav.solar_handoff'
+  | 'nav.sales'
+  | 'nav.kpi'
+  | 'nav.fee_master'
+  | 'nav.admin';
 
 const ALL_PERMS: Permission[] = [
   'customer.read.own',
@@ -33,11 +46,23 @@ const ALL_PERMS: Permission[] = [
   'customer.delete',
   'csv.export',
   'admin.manage_users',
+  'event.manage',
   'kpi.view.team',
   'kpi.view.all',
   'consent.grant',
   'consent.withdraw',
   'partner.handoff',
+  'nav.intake',
+  'nav.customers',
+  'nav.looop',
+  'nav.bills',
+  'nav.refunds',
+  'nav.cross_sell',
+  'nav.solar_handoff',
+  'nav.sales',
+  'nav.kpi',
+  'nav.fee_master',
+  'nav.admin',
 ];
 
 export const ROLE_PERMISSIONS: Record<RoleCode, Permission[]> = {
@@ -49,11 +74,62 @@ export const ROLE_PERMISSIONS: Record<RoleCode, Permission[]> = {
     'consent.grant',
     'consent.withdraw',
     'partner.handoff',
+    'csv.export',
+    'admin.manage_users',
+    'event.manage',
+    'nav.intake',
+    'nav.customers',
+    'nav.looop',
+    'nav.bills',
+    'nav.refunds',
+    'nav.cross_sell',
+    'nav.solar_handoff',
+    'nav.sales',
+    'nav.kpi',
+    'nav.admin',
   ],
-  field: ['customer.read.own', 'customer.write.own', 'consent.grant'],
-  cs: ['customer.read.team'],
-  finance: ['customer.read.team', 'kpi.view.team'],
-  partner: [],
+  field: [
+    'customer.read.own',
+    'customer.write.own',
+    'consent.grant',
+    'admin.manage_users',
+    'event.manage',
+    'nav.intake',
+    'nav.customers',
+    'nav.looop',
+    'nav.cross_sell',
+    'nav.admin',
+  ],
+  cs: [
+    'customer.read.team',
+    'nav.customers',
+    'nav.looop',
+    'nav.cross_sell',
+  ],
+  finance: [
+    'customer.read.team',
+    'kpi.view.team',
+    'nav.customers',
+    'nav.bills',
+    'nav.refunds',
+    'nav.sales',
+    'nav.kpi',
+    'nav.fee_master',
+  ],
+  // パートナーは自社で扱う顧客のみ（太陽光連携の流入分）。詳細は別途調整。
+  partner: [
+    'nav.customers',
+    'nav.solar_handoff',
+  ],
+};
+
+export const ROLE_LABELS: Record<RoleCode, string> = {
+  admin: '管理者',
+  manager: 'マネージャー',
+  field: '現場スタッフ',
+  cs: 'CS担当',
+  finance: '経理・管理',
+  partner: 'パートナー',
 };
 
 export function userHasPermission(user: SessionUser, perm: Permission): boolean {

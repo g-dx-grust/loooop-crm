@@ -5,11 +5,11 @@ import { cn } from '@/lib/cn';
 
 const TABS = [
   { value: '', label: '全件' },
-  { value: 'proposed', label: '提案中' },
-  { value: 'applied', label: '申込中' },
-  { value: 'contracted', label: '契約済' },
-  { value: 'opened', label: '開通済' },
+  { value: 'applied', label: '申込済' },
+  { value: 'completed', label: '完了' },
   { value: 'cancelled', label: 'キャンセル' },
+  { value: 'matching_error', label: 'マッチングエラー' },
+  { value: 'terminated', label: '解約' },
 ] as const;
 
 export function LooopStatusTabs() {
@@ -28,14 +28,14 @@ export function LooopStatusTabs() {
   }
 
   return (
-    <div className="flex gap-1 border-b border-border px-6">
+    <div className="flex gap-1 overflow-x-auto border-b border-border px-4 lg:px-6">
       {TABS.map((tab) => (
         <button
           key={tab.value}
           type="button"
           onClick={() => handleClick(tab.value)}
           className={cn(
-            'h-9 px-3 text-sm transition-colors',
+            'h-9 shrink-0 whitespace-nowrap px-3 text-sm transition-colors',
             current === tab.value
               ? 'border-b-2 border-brand-primary text-brand-primary font-medium'
               : 'text-text-secondary hover:text-text-primary',

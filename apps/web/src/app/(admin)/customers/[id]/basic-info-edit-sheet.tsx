@@ -14,6 +14,8 @@ interface BasicInfoEditSheetProps {
     kana: string | null;
     birthDate: string | null;
     memo: string | null;
+    currentMobileCarrier?: string | null;
+    currentWifiCarrier?: string | null;
   };
   open: boolean;
   onClose: () => void;
@@ -32,6 +34,8 @@ export function BasicInfoEditSheet({
   const [kana, setKana] = useState(initialValues.kana ?? '');
   const [birthDate, setBirthDate] = useState(initialValues.birthDate ?? '');
   const [memo, setMemo] = useState(initialValues.memo ?? '');
+  const [carrier, setCarrier] = useState(initialValues.currentMobileCarrier ?? '');
+  const [wifi, setWifi] = useState(initialValues.currentWifiCarrier ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const handleSave = (e: React.FormEvent) => {
@@ -44,6 +48,8 @@ export function BasicInfoEditSheet({
       kana: kana.trim() || undefined,
       birthDate: birthDate || undefined,
       memo: memo.trim() || undefined,
+      currentMobileCarrier: carrier.trim() || undefined,
+      currentWifiCarrier: wifi.trim() || undefined,
     };
 
     startTransition(async () => {
@@ -119,6 +125,36 @@ export function BasicInfoEditSheet({
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
             className="h-9 tabular-nums"
+          />
+        </div>
+
+        {/* 使用中キャリア */}
+        <div>
+          <label htmlFor="edit-carrier" className="mb-1 block text-sm font-medium text-text-secondary">
+            使用中キャリア
+            <span className="ml-1.5 text-xs font-normal text-text-tertiary">(任意)</span>
+          </label>
+          <Input
+            id="edit-carrier"
+            value={carrier}
+            onChange={(e) => setCarrier(e.target.value)}
+            placeholder="例: ドコモ / au / ソフトバンク / 楽天モバイル"
+            className="h-9"
+          />
+        </div>
+
+        {/* 使用中Wi-Fi */}
+        <div>
+          <label htmlFor="edit-wifi" className="mb-1 block text-sm font-medium text-text-secondary">
+            使用中Wi-Fi
+            <span className="ml-1.5 text-xs font-normal text-text-tertiary">(任意)</span>
+          </label>
+          <Input
+            id="edit-wifi"
+            value={wifi}
+            onChange={(e) => setWifi(e.target.value)}
+            placeholder="例: ドコモ光 / SoftBank Air / 未契約"
+            className="h-9"
           />
         </div>
 

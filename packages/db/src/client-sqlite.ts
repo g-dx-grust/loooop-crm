@@ -1,8 +1,9 @@
 import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { mkdirSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { dirname } from 'path';
 import * as schema from './schema-lite';
+import { resolveSqlitePath } from './sqlite-path';
 
 export type LooopDb = BetterSQLite3Database<typeof schema>;
 
@@ -13,9 +14,7 @@ declare global {
 
 export function getSqliteDb(): LooopDb {
   if (!global.__looop_sqlite) {
-    const url = process.env.DATABASE_URL ?? 'file:.local-db/looop.db';
-    const rel = url.replace(/^file:/, '');
-    const dbPath = resolve(process.cwd(), rel);
+    const dbPath = resolveSqlitePath();
     mkdirSync(dirname(dbPath), { recursive: true });
     const sqlite = new Database(dbPath);
     sqlite.pragma('journal_mode = WAL');

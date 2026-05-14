@@ -1,15 +1,16 @@
 /**
- * ローカル開発: SQLite (file:.local-db/looop.db)
- * 本番デプロイ時: DATABASE_URL を Postgres URL に差し替えて
- *   src/index-pg.ts をこのファイルに置き換えるだけ。
+ * Supabase (Postgres) + Drizzle ORM クライアント。
+ * DATABASE_URL は apps/web/.env.local (Transaction pooler) を使う。
+ *
+ * ローカル SQLite に戻したい場合は client-sqlite.ts / schema-lite/ を直接 import すること。
  */
-export { getSqliteDb as getDb } from './client-sqlite';
-import { getSqliteDb } from './client-sqlite';
+export { getPgDb as getDb } from './client-postgres';
+import { getPgDb } from './client-postgres';
 
-export const db = getSqliteDb();
+export const db = getPgDb();
 
 // スキーマ（テーブル定義・型）
-export * from './schema-lite';
+export * from './schema';
 
 // drizzle-orm ヘルパーの再エクスポート（callers が drizzle-orm に直接依存しなくて済む）
 export { eq, and, or, isNull, isNotNull, inArray, desc, asc, sql, lt, lte, gt, gte, ne } from 'drizzle-orm';

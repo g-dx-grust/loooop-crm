@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"phone" text,
 	"team_id" uuid,
 	"status" text DEFAULT 'active' NOT NULL,
+	"auth_provider" text DEFAULT 'password' NOT NULL,
+	"password_hash" text,
 	"joined_at" timestamp with time zone,
 	"left_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -94,6 +96,8 @@ CREATE TABLE IF NOT EXISTS "customers" (
 	"age_range" text,
 	"household_info" text,
 	"preferred_contact_time" text,
+	"current_mobile_carrier" text,
+	"current_wifi_carrier" text,
 	"memo" text,
 	"created_by" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -122,6 +126,11 @@ CREATE TABLE IF NOT EXISTS "looop_contracts" (
 	"monthly_electric_bill" integer,
 	"wattage" integer,
 	"bill_usage_month" text,
+	"plan_code" text DEFAULT 'smart_time_one_lighting' NOT NULL,
+	"payment_method" text DEFAULT 'bank_account' NOT NULL,
+	"supply_start_date" date,
+	"termination_date" date,
+	"memo" text,
 	"status" text DEFAULT 'not_proposed' NOT NULL,
 	"application_date" date,
 	"contract_date" date,
@@ -131,6 +140,66 @@ CREATE TABLE IF NOT EXISTS "looop_contracts" (
 	"unit_price" integer DEFAULT 30000 NOT NULL,
 	"revenue_month" text,
 	"payment_status" text DEFAULT 'unbilled' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "electricity_bills" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"customer_id" uuid NOT NULL,
+	"contract_id" uuid,
+	"bill_month" text NOT NULL,
+	"usage_kwh" integer,
+	"electric_fee" integer,
+	"payment_method" text NOT NULL,
+	"plan_code" text DEFAULT 'smart_time_one_lighting' NOT NULL,
+	"application_month" text,
+	"contract_month" text,
+	"supply_start_date" date,
+	"expected_payment_month" text,
+	"paid_amount" integer,
+	"fee_amount" integer NOT NULL,
+	"admin_fee" integer DEFAULT 2000 NOT NULL,
+	"net_fee" integer NOT NULL,
+	"minimum_applied" integer DEFAULT 0 NOT NULL,
+	"refund_flagged" integer DEFAULT 0 NOT NULL,
+	"fee_master_id" uuid,
+	"note" text,
+	"created_by" uuid,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"deleted_at" timestamp with time zone
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "fee_master" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"plan_code" text NOT NULL,
+	"payment_method" text NOT NULL,
+	"kwh_min" integer NOT NULL,
+	"kwh_max" integer,
+	"fee_amount" integer NOT NULL,
+	"admin_fee" integer DEFAULT 2000 NOT NULL,
+	"effective_from" date NOT NULL,
+	"effective_to" date,
+	"note" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "refunds" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"customer_id" uuid NOT NULL,
+	"contract_id" uuid,
+	"bill_id" uuid,
+	"reason_code" text NOT NULL,
+	"cancel_date" date,
+	"termination_date" date,
+	"supply_start_date" date,
+	"refund_month" text,
+	"refund_amount" integer NOT NULL,
+	"note" text,
+	"created_by" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"deleted_at" timestamp with time zone
@@ -317,6 +386,48 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "electricity_bills" ADD CONSTRAINT "electricity_bills_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE restrict ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "electricity_bills" ADD CONSTRAINT "electricity_bills_contract_id_looop_contracts_id_fk" FOREIGN KEY ("contract_id") REFERENCES "public"."looop_contracts"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "electricity_bills" ADD CONSTRAINT "electricity_bills_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "refunds" ADD CONSTRAINT "refunds_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE restrict ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "refunds" ADD CONSTRAINT "refunds_contract_id_looop_contracts_id_fk" FOREIGN KEY ("contract_id") REFERENCES "public"."looop_contracts"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "refunds" ADD CONSTRAINT "refunds_bill_id_electricity_bills_id_fk" FOREIGN KEY ("bill_id") REFERENCES "public"."electricity_bills"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "refunds" ADD CONSTRAINT "refunds_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "cross_sell_opportunities" ADD CONSTRAINT "cross_sell_opportunities_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -405,6 +516,12 @@ CREATE INDEX IF NOT EXISTS "leads_customer_idx" ON "leads" USING btree ("custome
 CREATE INDEX IF NOT EXISTS "looop_status_idx" ON "looop_contracts" USING btree ("status");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "looop_revenue_month_idx" ON "looop_contracts" USING btree ("revenue_month");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "looop_customer_idx" ON "looop_contracts" USING btree ("customer_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "electricity_bills_customer_idx" ON "electricity_bills" USING btree ("customer_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "electricity_bills_month_idx" ON "electricity_bills" USING btree ("bill_month");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "electricity_bills_customer_month_uq" ON "electricity_bills" USING btree ("customer_id","bill_month");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "fee_master_lookup_idx" ON "fee_master" USING btree ("plan_code","payment_method","effective_from");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "refunds_customer_idx" ON "refunds" USING btree ("customer_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "refunds_month_idx" ON "refunds" USING btree ("refund_month");--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "cross_sell_customer_product_uq" ON "cross_sell_opportunities" USING btree ("customer_id","product_type");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "cross_sell_status_idx" ON "cross_sell_opportunities" USING btree ("status");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "consents_customer_type_idx" ON "consents" USING btree ("customer_id","consent_type","consented_at");--> statement-breakpoint

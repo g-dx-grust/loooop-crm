@@ -121,13 +121,13 @@ export function AuditSection({ initialRows, initialTotal }: Props) {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-border bg-bg-subtle text-xs text-text-secondary">
-              <th className="h-9 px-3 text-left font-medium tabular-nums">ID</th>
-              <th className="h-9 px-3 text-left font-medium">操作者</th>
-              <th className="h-9 px-3 text-left font-medium">アクション</th>
-              <th className="h-9 px-3 text-left font-medium">リソース種別</th>
-              <th className="h-9 px-3 text-left font-medium">リソースID</th>
-              <th className="h-9 px-3 text-left font-medium">IPアドレス</th>
-              <th className="h-9 px-3 text-left font-medium">日時</th>
+              <th className="h-9 whitespace-nowrap px-3 text-left font-medium tabular-nums">ID</th>
+              <th className="h-9 whitespace-nowrap px-3 text-left font-medium">操作者</th>
+              <th className="h-9 whitespace-nowrap px-3 text-left font-medium">アクション</th>
+              <th className="h-9 whitespace-nowrap px-3 text-left font-medium">リソース種別</th>
+              <th className="h-9 whitespace-nowrap px-3 text-left font-medium">リソースID</th>
+              <th className="h-9 whitespace-nowrap px-3 text-left font-medium">IPアドレス</th>
+              <th className="h-9 whitespace-nowrap px-3 text-left font-medium">日時</th>
             </tr>
           </thead>
           <tbody>
@@ -144,15 +144,15 @@ export function AuditSection({ initialRows, initialTotal }: Props) {
                   className="h-10 cursor-pointer border-b border-border hover:bg-bg-subtle"
                   onClick={() => setSelectedRow(row)}
                 >
-                  <td className="px-3 tabular-nums text-text-tertiary">{row.id}</td>
-                  <td className="px-3 text-text-secondary">{row.actorName ?? '—'}</td>
-                  <td className="px-3 text-text-primary">{formatAction(row.action)}</td>
-                  <td className="px-3 text-text-secondary">{row.resourceType ?? '—'}</td>
-                  <td className="px-3 font-mono text-xs text-text-tertiary">
+                  <td className="whitespace-nowrap px-3 tabular-nums text-text-tertiary">{row.id}</td>
+                  <td className="whitespace-nowrap px-3 text-text-secondary">{row.actorName ?? '—'}</td>
+                  <td className="whitespace-nowrap px-3 text-text-primary">{formatAction(row.action)}</td>
+                  <td className="whitespace-nowrap px-3 text-text-secondary">{row.resourceType ?? '—'}</td>
+                  <td className="whitespace-nowrap px-3 font-mono text-xs text-text-tertiary">
                     {row.resourceId ? row.resourceId.slice(0, 8) + '…' : '—'}
                   </td>
-                  <td className="px-3 tabular-nums text-text-secondary">{row.ipAddress ?? '—'}</td>
-                  <td className="px-3 tabular-nums text-text-secondary">
+                  <td className="whitespace-nowrap px-3 tabular-nums text-text-secondary">{row.ipAddress ?? '—'}</td>
+                  <td className="whitespace-nowrap px-3 tabular-nums text-text-secondary">
                     {row.createdAt
                       ? new Date(row.createdAt).toLocaleString('ja-JP', {
                           year: 'numeric',

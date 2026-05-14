@@ -232,6 +232,8 @@ export interface UpdateCustomerInput {
   kana?: string;
   birthDate?: string;
   memo?: string;
+  currentMobileCarrier?: string;
+  currentWifiCarrier?: string;
 }
 
 export async function updateCustomer(
@@ -255,6 +257,8 @@ export async function updateCustomer(
       kana: input.kana ?? null,
       birthDate: input.birthDate ?? null,
       memo: input.memo ?? null,
+      currentMobileCarrier: input.currentMobileCarrier ?? null,
+      currentWifiCarrier: input.currentWifiCarrier ?? null,
       updatedAt: new Date(),
     })
     .where(eq(customers.id, customerId));

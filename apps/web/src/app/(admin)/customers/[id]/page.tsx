@@ -89,7 +89,10 @@ export default async function CustomerDetailPage({
       !c.withdrawnAt,
   );
 
-  const maskedPhone = maskPhone(customer.phoneEnc);
+  const phoneStr = customer.phoneEnc instanceof Uint8Array ? Buffer.from(customer.phoneEnc).toString('utf8') : customer.phoneEnc as string;
+  const phoneSubStr = customer.phoneSubEnc instanceof Uint8Array ? Buffer.from(customer.phoneSubEnc).toString('utf8') : (customer.phoneSubEnc as string | null);
+  const emailStr = customer.emailEnc instanceof Uint8Array ? Buffer.from(customer.emailEnc).toString('utf8') : (customer.emailEnc as string | null);
+  const maskedPhone = maskPhone(phoneStr);
 
   function renderTabContent(activeTab: TabKey) {
     switch (activeTab) {
@@ -100,14 +103,16 @@ export default async function CustomerDetailPage({
             customer={{
               name: customer.name,
               kana: customer.kana,
-              phoneEnc: customer.phoneEnc,
-              phoneSubEnc: customer.phoneSubEnc,
-              emailEnc: customer.emailEnc,
+              phoneEnc: phoneStr,
+              phoneSubEnc: phoneSubStr,
+              emailEnc: emailStr,
               birthDate: customer.birthDate,
               memo: customer.memo,
+              currentMobileCarrier: customer.currentMobileCarrier ?? null,
+              currentWifiCarrier: customer.currentWifiCarrier ?? null,
             }}
             maskedPhone={maskedPhone}
-            maskedPhoneSub={customer.phoneSubEnc ? maskPhone(customer.phoneSubEnc) : null}
+            maskedPhoneSub={phoneSubStr ? maskPhone(phoneSubStr) : null}
           />
         );
 
@@ -185,7 +190,7 @@ export default async function CustomerDetailPage({
                       <>
                         <dt className="text-text-secondary">緯度 / 経度</dt>
                         <dd className="tabular-nums text-text-primary">
-                          {addr.latitude.toFixed(6)}, {addr.longitude.toFixed(6)}
+                          {Number(addr.latitude).toFixed(6)}, {Number(addr.longitude).toFixed(6)}
                         </dd>
                       </>
                     ) : null}
@@ -357,9 +362,9 @@ export default async function CustomerDetailPage({
         }
       />
 
-      <div className="flex min-h-0 flex-1 gap-0">
+      <div className="flex min-h-0 flex-1 flex-col gap-0 lg:flex-row">
         {/* Left 2/3: tabs */}
-        <div className="min-w-0 flex-[2] border-r border-border">
+        <div className="min-w-0 flex-[2] lg:border-r lg:border-border">
           <DetailTabs
             panels={DETAIL_TAB_KEYS.map((tab) => ({
               tab,
@@ -369,8 +374,8 @@ export default async function CustomerDetailPage({
         </div>
 
         {/* Right 1/3: sticky info panel */}
-        <aside className="w-72 shrink-0 xl:w-80">
-          <div className="sticky top-0 space-y-4 overflow-y-auto p-4">
+        <aside className="w-full shrink-0 border-t border-border lg:w-72 lg:border-t-0 xl:w-80">
+          <div className="space-y-4 p-4 lg:sticky lg:top-0 lg:overflow-y-auto">
             {/* Staff */}
             <Card className="p-4">
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
@@ -454,6 +459,9 @@ export default async function CustomerDetailPage({
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
                   住所
                 </h3>
+                {address.postalCode ? (
+                  <p className="tabular-nums text-xs text-text-secondary">〒{address.postalCode}</p>
+                ) : null}
                 <p className="text-sm text-text-primary">
                   {[address.prefecture, address.city].filter(Boolean).join(' ')}
                 </p>

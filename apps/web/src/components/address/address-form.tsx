@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { MapPin, Loader2, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,7 @@ function PostalCodeField({
 }: {
   value: string;
   onChange: (v: string) => void;
-  onFill: (prefecture: string, city: string) => void;
+  onFill: (postalCode: string, prefecture: string, city: string) => void;
   error?: string;
 }) {
   const [loading, setLoading] = useState(false);
@@ -95,7 +95,9 @@ function PostalCodeField({
       const res = await fetch(`/api/geocode/postal?zipcode=${zipcode}`);
       if (res.ok) {
         const data = (await res.json()) as { prefecture: string; city: string; town: string };
-        onFill(data.prefecture, data.city + (data.town ?? ''));
+        // Pass zipcode explicitly so the parent can include it in the same update,
+        // preventing stale-closure overwrites of the postalCode field.
+        onFill(zipcode, data.prefecture, data.city + (data.town ?? ''));
       }
     } catch {
       // ignore
@@ -470,11 +472,16 @@ function MapPinSection({
 // Main AddressForm
 // ---------------------------------------------------------------------------
 export function AddressForm({ value, onChange, errors }: AddressFormProps) {
+  // useRef ensures update() always reads the latest value even when called
+  // from a stale async closure (e.g. the postal-code fetchPostal callback).
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
   const update = useCallback(
     (partial: Partial<AddressFormValues>) => {
-      onChange({ ...value, ...partial });
+      onChange({ ...valueRef.current, ...partial });
     },
-    [value, onChange],
+    [onChange],
   );
 
   const fullAddress = [value.prefecture, value.city, value.street, value.building]
@@ -486,7 +493,7 @@ export function AddressForm({ value, onChange, errors }: AddressFormProps) {
       <PostalCodeField
         value={value.postalCode}
         onChange={(v) => update({ postalCode: v })}
-        onFill={(prefecture, city) => update({ prefecture, city })}
+        onFill={(postalCode, prefecture, city) => update({ postalCode, prefecture, city })}
         error={errors?.postalCode}
       />
 

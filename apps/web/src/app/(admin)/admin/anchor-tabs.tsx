@@ -1,19 +1,25 @@
 'use client';
 
-const TABS = [
-  { anchor: 'audit', label: '監査ログ' },
-  { anchor: 'events', label: '会場マスタ' },
-  { anchor: 'consent-texts', label: '同意文' },
-] as const;
+interface AnchorTabsProps {
+  canManageUsers: boolean;
+  canManageEvents: boolean;
+}
 
-export function AnchorTabs() {
+export function AnchorTabs({ canManageUsers, canManageEvents }: AnchorTabsProps) {
+  const tabs = [
+    canManageUsers ? { anchor: 'users', label: 'ユーザー・権限' } : null,
+    { anchor: 'audit', label: '監査ログ' },
+    canManageEvents ? { anchor: 'events', label: '会場マスタ' } : null,
+    { anchor: 'consent-texts', label: '同意文' },
+  ].filter(Boolean) as { anchor: string; label: string }[];
+
   return (
-    <div className="flex gap-1 border-b border-border">
-      {TABS.map((tab) => (
+    <div className="flex gap-1 overflow-x-auto border-b border-border">
+      {tabs.map((tab) => (
         <a
           key={tab.anchor}
           href={`#${tab.anchor}`}
-          className="h-9 px-3 flex items-center text-sm text-text-secondary hover:text-text-primary transition-colors"
+          className="flex h-9 shrink-0 items-center whitespace-nowrap px-3 text-sm text-text-secondary transition-colors hover:text-text-primary"
         >
           {tab.label}
         </a>

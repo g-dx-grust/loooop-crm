@@ -16,6 +16,12 @@ export const looopContracts = pgTable(
     monthlyElectricBill: integer('monthly_electric_bill'),
     wattage: integer('wattage'),
     billUsageMonth: text('bill_usage_month'),
+    // Looop プラン / 支払方法（仕様書 §2 申込管理）
+    planCode: text('plan_code').notNull().default('smart_time_one_lighting'),
+    paymentMethod: text('payment_method').notNull().default('bank_account'),
+    supplyStartDate: date('supply_start_date'),
+    terminationDate: date('termination_date'),
+    memo: text('memo'),
     status: text('status').notNull().default('not_proposed'),
     applicationDate: date('application_date'),
     contractDate: date('contract_date'),

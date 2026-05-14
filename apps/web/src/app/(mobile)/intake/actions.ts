@@ -108,11 +108,8 @@ export async function createCustomer(
     const phoneClean = normalizeDigits(input.phone);
     const email = input.email.trim();
     const postalCode = normalizeDigits(input.address.postalCode);
-    const monthlyElectricBill = input.monthlyElectricBill
-      ? Number.parseInt(normalizeDigits(input.monthlyElectricBill), 10)
-      : null;
-    const wattage = input.wattage ? Number.parseInt(normalizeDigits(input.wattage), 10) : null;
 
+    // --- Validation ---
     if (!input.name.trim()) {
       return { success: false, error: '氏名を入力してください。' };
     }
@@ -125,7 +122,10 @@ export async function createCustomer(
     if (!isValidEmail(email)) {
       return { success: false, error: 'メールアドレスの形式で入力してください。' };
     }
-    if (input.birthDate && isFutureDate(input.birthDate)) {
+    if (!input.birthDate) {
+      return { success: false, error: '生年月日を入力してください。' };
+    }
+    if (isFutureDate(input.birthDate)) {
       return { success: false, error: '生年月日は未来日を指定できません。' };
     }
     if (!postalCode || postalCode.length !== 7) {
@@ -137,18 +137,31 @@ export async function createCustomer(
     if (!input.address.pinConfirmed) {
       return { success: false, error: '地図のピン位置を確定してください。' };
     }
-    if (
-      monthlyElectricBill !== null &&
-      (!Number.isFinite(monthlyElectricBill) || monthlyElectricBill < 0 || monthlyElectricBill > 300000)
-    ) {
-      return { success: false, error: '月間の電気料金は0〜300,000円の範囲で入力してください。' };
+
+    // 月間電気料金・ワット数・明細利用月は必須
+    if (!input.monthlyElectricBill.trim()) {
+      return { success: false, error: '月間の電気料金を入力してください。' };
     }
-    if (wattage !== null && (!Number.isFinite(wattage) || wattage < 0 || wattage > 200000)) {
-      return { success: false, error: 'ワット数は0〜200,000Wの範囲で入力してください。' };
+    if (!input.wattage.trim()) {
+      return { success: false, error: 'ワット数を入力してください。' };
     }
-    if (input.billUsageMonth && isFutureMonth(input.billUsageMonth)) {
+    if (!input.billUsageMonth.trim()) {
+      return { success: false, error: '明細の利用月を入力してください。' };
+    }
+
+    const monthlyElectricBill = Number.parseInt(normalizeDigits(input.monthlyElectricBill), 10);
+    const wattage = Number.parseInt(normalizeDigits(input.wattage), 10);
+
+    if (!Number.isFinite(monthlyElectricBill) || monthlyElectricBill <= 0 || monthlyElectricBill > 300000) {
+      return { success: false, error: '月間の電気料金は1〜300,000円の範囲で入力してください。' };
+    }
+    if (!Number.isFinite(wattage) || wattage <= 0 || wattage > 200000) {
+      return { success: false, error: 'ワット数は1〜200,000Wの範囲で入力してください。' };
+    }
+    if (isFutureMonth(input.billUsageMonth)) {
       return { success: false, error: '明細の利用月は未来月を指定できません。' };
     }
+
     if (!input.eventId) {
       return { success: false, error: '催事会場を選択してください。' };
     }
@@ -173,29 +186,27 @@ export async function createCustomer(
     }
 
     const consentText = await resolveLatestConsentText();
-    let customerId = '';
 
-    // better-sqlite3 transaction is synchronous
-    db.transaction((tx) => {
+    // PostgreSQL トランザクション (drizzle-orm/postgres-js は async)
+    const customerId = await db.transaction(async (tx) => {
       // 1. Insert customer
-      const customerInsert = tx
+      // bytea 列はアプリ層暗号化が未実装のため、文字列を Buffer に変換して格納する
+      const customerInsert = await tx
         .insert(customers)
         .values({
           displayId,
           name: input.name,
           kana: input.kana || null,
-          phoneEnc: phoneClean,
-          phoneHash: phoneClean,
+          phoneEnc: Buffer.from(phoneClean) as unknown as Buffer,
+          phoneHash: Buffer.from(phoneClean) as unknown as Buffer,
           birthDate: input.birthDate || null,
-          emailEnc: email,
+          emailEnc: email ? (Buffer.from(email) as unknown as Buffer) : null,
           createdBy: null,
         })
-        .returning({ id: customers.id })
-        .all();
+        .returning({ id: customers.id });
 
       const custId = customerInsert[0]?.id;
       if (!custId) throw new Error('顧客の登録に失敗しました。');
-      customerId = custId;
 
       // 2. Insert customer_address
       const addr = input.address;
@@ -203,32 +214,30 @@ export async function createCustomer(
         .filter(Boolean)
         .join('');
 
-      tx.insert(customerAddresses)
-        .values({
-          customerId: custId,
-          isPrimary: true,
-          postalCode,
-          prefecture: addr.prefecture || null,
-          city: addr.city || null,
-          street: addr.street || null,
-          building: addr.building || null,
-          addressText: addressText || null,
-          googleFormattedAddress: addr.googleFormattedAddress ?? null,
-          googleMapsUrl: addr.googleMapsUrl ?? null,
-          latitude: addr.latitude ?? null,
-          longitude: addr.longitude ?? null,
-          googlePlaceId: addr.googlePlaceId ?? null,
-          pinConfirmed: addr.pinConfirmed,
-          pinCorrected: addr.pinCorrected,
-          pinCorrectionNote: addr.pinCorrectionNote ?? null,
-          accuracyStatus: addr.accuracyStatus || 'unconfirmed',
-          residenceType: addr.residenceType || null,
-          ownershipType: addr.ownershipType || null,
-        })
-        .run();
+      await tx.insert(customerAddresses).values({
+        customerId: custId,
+        isPrimary: true,
+        postalCode,
+        prefecture: addr.prefecture || null,
+        city: addr.city || null,
+        street: addr.street || null,
+        building: addr.building || null,
+        addressText: addressText || null,
+        googleFormattedAddress: addr.googleFormattedAddress ?? null,
+        googleMapsUrl: addr.googleMapsUrl ?? null,
+        latitude: addr.latitude != null ? String(addr.latitude) : null,
+        longitude: addr.longitude != null ? String(addr.longitude) : null,
+        googlePlaceId: addr.googlePlaceId ?? null,
+        pinConfirmed: addr.pinConfirmed,
+        pinCorrected: addr.pinCorrected,
+        pinCorrectionNote: addr.pinCorrectionNote ?? null,
+        accuracyStatus: addr.accuracyStatus || 'unconfirmed',
+        residenceType: addr.residenceType || null,
+        ownershipType: addr.ownershipType || null,
+      });
 
       // 3. Insert lead
-      const leadInsert = tx
+      const leadInsert = await tx
         .insert(leads)
         .values({
           customerId: custId,
@@ -237,60 +246,50 @@ export async function createCustomer(
           leadStatus: 'new',
           source: 'event',
         })
-        .returning({ id: leads.id })
-        .all();
+        .returning({ id: leads.id });
 
       const leadId = leadInsert[0]?.id ?? null;
 
-      // 4. Insert looop_contract
-      if (input.monthlyElectricBill || input.wattage || input.billUsageMonth) {
-        tx.insert(looopContracts)
-          .values({
-            customerId: custId,
-            leadId,
-            monthlyElectricBill,
-            wattage,
-            billUsageMonth: input.billUsageMonth || null,
-            status: 'not_proposed',
-          })
-          .run();
-      }
+      // 4. Insert looop_contract (月間電気料金・ワット数・利用月は必須なので常に挿入)
+      await tx.insert(looopContracts).values({
+        customerId: custId,
+        leadId,
+        monthlyElectricBill,
+        wattage,
+        billUsageMonth: input.billUsageMonth,
+        status: 'applied',
+      });
 
-      // 5. Insert consents. The intake form shows one combined consent checkbox,
-      // while downstream solar handoff still reads the dedicated consent type.
+      // 5. Insert consents
       const now = new Date();
 
-      tx.insert(consents)
-        .values({
-          customerId: custId,
-          consentType: 'personal_info_use',
-          consentStatus: input.consent.personalInfoConsent ? 'granted' : 'withdrawn',
-          consentTextVersion: consentText.version,
-          consentedAt: now,
-          consentedBy: null,
-        })
-        .run();
+      await tx.insert(consents).values({
+        customerId: custId,
+        consentType: 'personal_info_use',
+        consentStatus: input.consent.personalInfoConsent ? 'granted' : 'withdrawn',
+        consentTextVersion: consentText.version,
+        consentedAt: now,
+        consentedBy: null,
+      });
 
-      tx.insert(consents)
-        .values({
-          customerId: custId,
-          consentType: 'solar_partner_share',
-          consentStatus: 'granted',
-          consentTextVersion: consentText.version,
-          consentedAt: now,
-          consentedBy: null,
-        })
-        .run();
+      await tx.insert(consents).values({
+        customerId: custId,
+        consentType: 'solar_partner_share',
+        consentStatus: 'granted',
+        consentTextVersion: consentText.version,
+        consentedAt: now,
+        consentedBy: null,
+      });
 
       // 6. Audit log
-      tx.insert(auditLogs)
-        .values({
-          action: 'customer.create',
-          resourceType: 'customer',
-          resourceId: custId,
-          diff: { displayId, name: input.name },
-        })
-        .run();
+      await tx.insert(auditLogs).values({
+        action: 'customer.create',
+        resourceType: 'customer',
+        resourceId: custId,
+        diff: { displayId, name: input.name },
+      });
+
+      return custId;
     });
 
     return { success: true, customerId };

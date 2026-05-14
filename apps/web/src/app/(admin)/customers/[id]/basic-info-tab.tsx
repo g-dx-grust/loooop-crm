@@ -15,6 +15,8 @@ interface BasicInfoTabProps {
     emailEnc: string | null;
     birthDate: string | null;
     memo: string | null;
+    currentMobileCarrier?: string | null;
+    currentWifiCarrier?: string | null;
   };
   maskedPhone: string;
   maskedPhoneSub: string | null;
@@ -78,6 +80,20 @@ export function BasicInfoTab({
           </>
         ) : null}
 
+        {customer.currentMobileCarrier ? (
+          <>
+            <dt className="text-text-secondary">使用中キャリア</dt>
+            <dd className="text-text-primary">{customer.currentMobileCarrier}</dd>
+          </>
+        ) : null}
+
+        {customer.currentWifiCarrier ? (
+          <>
+            <dt className="text-text-secondary">使用中Wi-Fi</dt>
+            <dd className="text-text-primary">{customer.currentWifiCarrier}</dd>
+          </>
+        ) : null}
+
         {customer.memo ? (
           <>
             <dt className="text-text-secondary">メモ</dt>
@@ -93,6 +109,8 @@ export function BasicInfoTab({
           kana: customer.kana,
           birthDate: customer.birthDate,
           memo: customer.memo,
+          currentMobileCarrier: customer.currentMobileCarrier ?? null,
+          currentWifiCarrier: customer.currentWifiCarrier ?? null,
         }}
         open={editOpen}
         onClose={() => setEditOpen(false)}

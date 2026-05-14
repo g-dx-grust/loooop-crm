@@ -16,6 +16,7 @@ import { updateCrossSell } from './actions';
 import type { CrossSellListItem } from './queries';
 import { CROSS_SELL_STATUSES, INTEREST_RANKS } from '@/lib/constants';
 import type { BadgeTone } from '@/components/ui/badge';
+import { Pencil } from 'lucide-react';
 
 interface Props {
   items: CrossSellListItem[];
@@ -76,7 +77,67 @@ export function CrossSellTable({ items }: Props) {
 
   return (
     <>
-      <div className="overflow-x-auto">
+      {/* Mobile card list (< lg) */}
+      <ul className="space-y-2 p-3 lg:hidden">
+        {items.length === 0 ? (
+          <li className="rounded border border-border bg-white py-8 text-center text-sm text-text-tertiary">
+            データがありません
+          </li>
+        ) : (
+          items.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                onClick={() => openSheet(item)}
+                className="block w-full rounded-lg border border-border bg-white p-3 text-left transition-colors active:bg-bg-subtle"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-semibold text-text-primary">
+                        {item.customerName}
+                      </span>
+                      {item.interestRank ? (
+                        <Badge tone={interestRankTone[item.interestRank] ?? 'neutral'} withDot={false}>
+                          {item.interestRank}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <p className="mt-0.5 text-xs text-text-tertiary">
+                      {PRODUCT_TYPE_LABELS[item.productType] ?? item.productType}
+                    </p>
+                  </div>
+                  <Badge tone={CROSS_SELL_STATUS_TONE[item.status] ?? 'neutral'}>
+                    {CROSS_SELL_STATUS_LABELS[item.status] ?? item.status}
+                  </Badge>
+                </div>
+                <dl className="mt-2.5 grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-xs">
+                  <dt className="text-text-tertiary">担当</dt>
+                  <dd className="truncate text-text-secondary">{item.staffName ?? '—'}</dd>
+                  <dt className="text-text-tertiary">次回</dt>
+                  <dd className="flex items-center gap-1.5 tabular-nums text-text-secondary">
+                    {formatDate(item.nextActionDate)}
+                    {item.isOverdue && (
+                      <span className="inline-flex items-center rounded bg-status-warningSoft px-1.5 py-0.5 text-[11px] font-medium text-status-warning">
+                        期限超過
+                      </span>
+                    )}
+                  </dd>
+                </dl>
+                <div className="mt-2.5 flex items-center justify-end border-t border-border pt-2">
+                  <span className="inline-flex items-center gap-1 text-xs text-brand-primary">
+                    <Pencil className="size-3" aria-hidden />
+                    編集
+                  </span>
+                </div>
+              </button>
+            </li>
+          ))
+        )}
+      </ul>
+
+      {/* Desktop table (≥ lg) */}
+      <div className="hidden overflow-x-auto lg:block">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-border bg-bg-subtle text-xs text-text-secondary">

@@ -11,27 +11,21 @@ import type { BadgeTone } from '@/components/ui/badge';
 import type { CustomerListItem } from './queries';
 
 const LOOOP_STATUS_LABELS: Record<string, string> = {
-  not_proposed: '未提案',
-  proposed:     '提案済み',
-  interested:   '興味あり',
-  applied:      '申込済み',
-  under_review: '審査中',
-  contracted:   '契約完了',
-  opened:       '開通済み',
-  cancelled:    'キャンセル',
-  excluded:     '対象外',
+  applied:        '申込済',
+  cancelled:      'キャンセル',
+  matching_error: 'マッチングエラー',
+  terminated:     '解約',
+  completed:      '完了',
 };
 
 function looopStatusTone(status: string | null): BadgeTone {
   switch (status) {
-    case 'contracted':
-    case 'opened':     return 'success';
-    case 'applied':
-    case 'under_review': return 'info';
-    case 'cancelled':  return 'error';
-    case 'proposed':
-    case 'interested': return 'warning';
-    default:           return 'neutral';
+    case 'completed':      return 'success';
+    case 'applied':        return 'info';
+    case 'cancelled':
+    case 'matching_error': return 'error';
+    case 'terminated':     return 'neutral';
+    default:               return 'neutral';
   }
 }
 
@@ -123,11 +117,11 @@ export function CustomerTableClient({ items }: Props) {
         <tr>
           <td colSpan={12} className="p-0">
             <div
-              className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2"
+              className="fixed bottom-4 left-1/2 z-40 w-[calc(100vw-32px)] max-w-md -translate-x-1/2 sm:bottom-6 sm:w-auto"
               role="region"
               aria-label="選択中の操作"
             >
-              <div className="flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-2.5 shadow-overlay">
+              <div className="flex items-center justify-center gap-3 rounded-lg border border-border bg-white px-4 py-2.5 shadow-overlay">
                 <span className="text-sm text-text-primary tabular-nums">
                   <span className="font-semibold text-brand-primary">{selected.size}</span>件選択中
                 </span>
@@ -165,7 +159,7 @@ export function CustomerTableClient({ items }: Props) {
             aria-label="全件選択"
           />
         </td>
-        <td colSpan={11} className="py-0" />
+        <td colSpan={12} className="py-0" />
       </tr>
 
       {items.map((item) => {
@@ -226,6 +220,22 @@ export function CustomerTableClient({ items }: Props) {
                     <span className="tabular-nums text-xs text-text-tertiary">
                       {item.birthDate}
                     </span>
+                  ) : null}
+                </div>
+              ) : (
+                <span className="text-text-disabled">—</span>
+              )}
+            </td>
+
+            {/* Postal code + city */}
+            <td className="px-3">
+              {item.postalCode || item.city ? (
+                <div className="flex flex-col gap-0">
+                  {item.postalCode ? (
+                    <span className="tabular-nums text-xs text-text-secondary leading-4">〒{item.postalCode}</span>
+                  ) : null}
+                  {item.city ? (
+                    <span className="text-xs text-text-primary leading-4">{item.city}</span>
                   ) : null}
                 </div>
               ) : (

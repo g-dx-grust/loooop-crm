@@ -1,4 +1,5 @@
-import { db, auditLogs, users, events, consentTextVersions, eq, isNull, desc, asc } from '@looop/db';
+import { db, auditLogs, users, userRoles, roles, events, consentTextVersions, eq, isNull, desc, asc } from '@looop/db';
+import type { RoleCode } from '@looop/db';
 
 export interface AuditFilters {
   search?: string;
@@ -146,6 +147,56 @@ export async function getStaffOptions(): Promise<StaffOption[]> {
     .from(users)
     .where(isNull(users.deletedAt))
     .orderBy(asc(users.displayName));
+}
+
+export interface UserAdminRow {
+  id: string;
+  displayName: string;
+  email: string;
+  status: string;
+  authProvider: 'lark' | 'password';
+  externalUserId: string | null;
+  roleCodes: RoleCode[];
+  createdAt: string | null;
+}
+
+export async function getStaffUsers(): Promise<UserAdminRow[]> {
+  const allUsers = await db
+    .select({
+      id: users.id,
+      displayName: users.displayName,
+      email: users.email,
+      status: users.status,
+      authProvider: users.authProvider,
+      externalUserId: users.externalUserId,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(isNull(users.deletedAt))
+    .orderBy(asc(users.createdAt));
+
+  const links = await db
+    .select({ userId: userRoles.userId, code: roles.code })
+    .from(userRoles)
+    .innerJoin(roles, eq(roles.id, userRoles.roleId));
+
+  const byUser = new Map<string, RoleCode[]>();
+  for (const l of links) {
+    const arr = byUser.get(l.userId) ?? [];
+    arr.push(l.code as RoleCode);
+    byUser.set(l.userId, arr);
+  }
+
+  return allUsers.map((u) => ({
+    id: u.id,
+    displayName: u.displayName,
+    email: u.email,
+    status: u.status,
+    authProvider: (u.authProvider === 'lark' ? 'lark' : 'password') as 'lark' | 'password',
+    externalUserId: u.externalUserId ?? null,
+    roleCodes: byUser.get(u.id) ?? [],
+    createdAt: u.createdAt ? u.createdAt.toISOString() : null,
+  }));
 }
 
 export async function getConsentVersions(): Promise<ConsentVersionRow[]> {

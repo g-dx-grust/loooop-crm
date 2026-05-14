@@ -217,7 +217,7 @@ function Step1({
       </div>
 
       <div>
-        <FieldLabel htmlFor="birth-date" optional>
+        <FieldLabel htmlFor="birth-date" required>
           生年月日
         </FieldLabel>
         <Input
@@ -228,6 +228,7 @@ function Step1({
           className="h-10 text-base tabular-nums"
           invalid={!!errors.birthDate}
           max={today}
+          aria-required
         />
         {errors.birthDate && (
           <p className="mt-1 text-xs text-status-error">{errors.birthDate}</p>
@@ -278,7 +279,7 @@ function Step3({
   return (
     <div className="space-y-4">
       <div>
-        <FieldLabel htmlFor="monthly-bill" optional>
+        <FieldLabel htmlFor="monthly-bill" required>
           月間の電気料金
         </FieldLabel>
         <div className="flex items-center gap-2">
@@ -297,6 +298,7 @@ function Step3({
             }
             className="h-10 w-40 text-base tabular-nums"
             invalid={!!errors.monthlyElectricBill}
+            aria-required
           />
           <span className="text-sm text-text-secondary">円</span>
         </div>
@@ -306,7 +308,7 @@ function Step3({
       </div>
 
       <div>
-        <FieldLabel htmlFor="wattage" optional>
+        <FieldLabel htmlFor="wattage" required>
           ワット数
         </FieldLabel>
         <div className="flex items-center gap-2">
@@ -325,6 +327,7 @@ function Step3({
             }
             className="h-10 w-40 text-base tabular-nums"
             invalid={!!errors.wattage}
+            aria-required
           />
           <span className="text-sm text-text-secondary">W</span>
         </div>
@@ -334,7 +337,7 @@ function Step3({
       </div>
 
       <div>
-        <FieldLabel htmlFor="bill-usage-month" optional>
+        <FieldLabel htmlFor="bill-usage-month" required>
           明細の利用月
         </FieldLabel>
         <Input
@@ -344,6 +347,7 @@ function Step3({
           onChange={(e) => onChange({ billUsageMonth: e.target.value })}
           className="h-10 text-base tabular-nums"
           invalid={!!errors.billUsageMonth}
+          aria-required
         />
         {errors.billUsageMonth && (
           <p className="mt-1 text-xs text-status-error">{errors.billUsageMonth}</p>
@@ -466,7 +470,9 @@ export function IntakeWizard({ events, consentText }: IntakeWizardProps) {
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
         newErrors.email = 'メールアドレスの形式で入力してください。';
       }
-      if (form.birthDate) {
+      if (!form.birthDate.trim()) {
+        newErrors.birthDate = '生年月日を入力してください。';
+      } else {
         const selected = new Date(`${form.birthDate}T00:00:00`);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -493,18 +499,28 @@ export function IntakeWizard({ events, consentText }: IntakeWizardProps) {
 
     if (s === 3) {
       if (!form.eventId) newErrors.eventId = '催事会場を選択してください。';
-      const monthlyElectricBill = form.monthlyElectricBill ? Number(form.monthlyElectricBill) : null;
-      if (
-        monthlyElectricBill !== null &&
-        (!Number.isFinite(monthlyElectricBill) || monthlyElectricBill > 300000)
-      ) {
-        newErrors.monthlyElectricBill = '0〜300,000円の範囲で入力してください。';
+
+      if (!form.monthlyElectricBill.trim()) {
+        newErrors.monthlyElectricBill = '月間の電気料金を入力してください。';
+      } else {
+        const val = Number(form.monthlyElectricBill);
+        if (!Number.isFinite(val) || val <= 0 || val > 300000) {
+          newErrors.monthlyElectricBill = '1〜300,000円の範囲で入力してください。';
+        }
       }
-      const wattage = form.wattage ? Number(form.wattage) : null;
-      if (wattage !== null && (!Number.isFinite(wattage) || wattage > 200000)) {
-        newErrors.wattage = '0〜200,000Wの範囲で入力してください。';
+
+      if (!form.wattage.trim()) {
+        newErrors.wattage = 'ワット数を入力してください。';
+      } else {
+        const val = Number(form.wattage);
+        if (!Number.isFinite(val) || val <= 0 || val > 200000) {
+          newErrors.wattage = '1〜200,000Wの範囲で入力してください。';
+        }
       }
-      if (form.billUsageMonth) {
+
+      if (!form.billUsageMonth.trim()) {
+        newErrors.billUsageMonth = '明細の利用月を入力してください。';
+      } else {
         const [year, month] = form.billUsageMonth.split('-').map(Number);
         const now = new Date();
         if (

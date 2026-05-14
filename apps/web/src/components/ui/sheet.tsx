@@ -13,7 +13,7 @@ interface SheetProps {
   width?: string;
 }
 
-export function Sheet({ open, onClose, title, children, footer, width = 'w-[480px]' }: SheetProps) {
+export function Sheet({ open, onClose, title, children, footer, width = 'sm:w-[480px]' }: SheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Close on Escape
@@ -55,7 +55,7 @@ export function Sheet({ open, onClose, title, children, footer, width = 'w-[480p
         aria-modal="true"
         aria-label={title}
         className={cn(
-          'absolute right-0 top-0 flex h-full flex-col bg-white shadow-overlay',
+          'absolute right-0 top-0 flex h-full w-full max-w-full flex-col bg-white shadow-overlay',
           width,
         )}
       >

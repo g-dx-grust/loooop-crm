@@ -35,6 +35,9 @@ export const customers = pgTable(
     ageRange: text('age_range'),
     householdInfo: text('household_info'),
     preferredContactTime: text('preferred_contact_time'),
+    // Looop CRM 拡張: 仕様書 §1（既存契約状況）
+    currentMobileCarrier: text('current_mobile_carrier'),
+    currentWifiCarrier: text('current_wifi_carrier'),
     memo: text('memo'),
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

@@ -6,6 +6,43 @@ import { cn } from '@/lib/cn';
 import { PRODUCT_TYPE_LABELS, CROSS_SELL_STATUS_LABELS } from '@/lib/status-labels';
 import { PRODUCT_TYPES, CROSS_SELL_STATUSES, INTEREST_RANKS } from '@/lib/constants';
 
+interface ChipGroupProps {
+  label: string;
+  values: readonly string[];
+  getLabel: (v: string) => string;
+  current: string;
+  onSelect: (v: string) => void;
+}
+
+function ChipGroup({ label, values, getLabel, current, onSelect }: ChipGroupProps) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+      <span className="shrink-0 text-xs font-medium text-text-tertiary">{label}</span>
+      <div className="flex flex-wrap gap-1.5">
+        {values.map((v) => {
+          const active = current === v;
+          return (
+            <button
+              key={v}
+              type="button"
+              onClick={() => onSelect(active ? '' : v)}
+              className={cn(
+                'inline-flex h-7 items-center gap-1 rounded border px-2.5 text-xs transition-colors',
+                active
+                  ? 'border-brand-primary bg-brand-primarySoft font-medium text-brand-primary'
+                  : 'border-border bg-white text-text-secondary hover:border-text-tertiary hover:text-text-primary',
+              )}
+            >
+              {getLabel(v)}
+              {active && <X className="size-3" aria-hidden />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function CrossSellFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,101 +62,60 @@ export function CrossSellFilters() {
     router.push(`/cross-sell?${params.toString()}`);
   }
 
+  const hasAny = !!(currentProduct || currentStatus || currentRank || currentOverdue);
+
   return (
-    <div className="flex flex-wrap gap-2 px-6 py-3 border-b border-border bg-bg-subtle">
-      {/* Product type chips */}
-      <div className="flex items-center gap-1 text-xs text-text-tertiary mr-1">商材:</div>
-      {(PRODUCT_TYPES as readonly string[]).map((pt) => {
-        const active = currentProduct === pt;
-        return (
+    <div className="space-y-2.5 border-b border-border bg-bg-subtle px-4 py-3 lg:px-6">
+      <ChipGroup
+        label="商材"
+        values={PRODUCT_TYPES}
+        getLabel={(v) => PRODUCT_TYPE_LABELS[v] ?? v}
+        current={currentProduct}
+        onSelect={(v) => setFilter('productType', v)}
+      />
+      <ChipGroup
+        label="ステータス"
+        values={CROSS_SELL_STATUSES}
+        getLabel={(v) => CROSS_SELL_STATUS_LABELS[v] ?? v}
+        current={currentStatus}
+        onSelect={(v) => setFilter('status', v)}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <ChipGroup
+          label="見込み度"
+          values={INTEREST_RANKS}
+          getLabel={(v) => v}
+          current={currentRank}
+          onSelect={(v) => setFilter('interestRank', v)}
+        />
+        <div className="flex items-center gap-2">
           <button
-            key={pt}
             type="button"
-            onClick={() => setFilter('productType', active ? '' : pt)}
+            onClick={() => setFilter('overdue', currentOverdue ? '' : '1')}
             className={cn(
-              'inline-flex h-6 items-center gap-1 rounded px-2 text-xs transition-colors',
-              active
-                ? 'bg-brand-primarySoft text-brand-primary font-medium'
-                : 'bg-white border border-border text-text-secondary hover:border-brand-primary hover:text-brand-primary',
+              'inline-flex h-7 items-center gap-1 rounded border px-2.5 text-xs transition-colors',
+              currentOverdue
+                ? 'border-status-warning bg-status-warningSoft font-medium text-status-warning'
+                : 'border-border bg-white text-text-secondary hover:border-status-warning hover:text-status-warning',
             )}
           >
-            {PRODUCT_TYPE_LABELS[pt] ?? pt}
-            {active && (
-              <X className="size-3" aria-hidden />
-            )}
+            期限超過のみ
+            {currentOverdue && <X className="size-3" aria-hidden />}
           </button>
-        );
-      })}
-
-      <span className="w-px bg-border mx-1" />
-
-      {/* Status chips */}
-      <div className="flex items-center gap-1 text-xs text-text-tertiary mr-1">ステータス:</div>
-      {(CROSS_SELL_STATUSES as readonly string[]).map((s) => {
-        const active = currentStatus === s;
-        return (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setFilter('status', active ? '' : s)}
-            className={cn(
-              'inline-flex h-6 items-center gap-1 rounded px-2 text-xs transition-colors',
-              active
-                ? 'bg-brand-primarySoft text-brand-primary font-medium'
-                : 'bg-white border border-border text-text-secondary hover:border-brand-primary hover:text-brand-primary',
-            )}
-          >
-            {CROSS_SELL_STATUS_LABELS[s] ?? s}
-            {active && <X className="size-3" aria-hidden />}
-          </button>
-        );
-      })}
-
-      <span className="w-px bg-border mx-1" />
-
-      {/* Interest rank chips */}
-      <div className="flex items-center gap-1 text-xs text-text-tertiary mr-1">見込み度:</div>
-      {(INTEREST_RANKS as readonly string[]).map((r) => {
-        const active = currentRank === r;
-        return (
-          <button
-            key={r}
-            type="button"
-            onClick={() => setFilter('interestRank', active ? '' : r)}
-            className={cn(
-              'inline-flex h-6 items-center gap-1 rounded px-2 text-xs transition-colors',
-              active
-                ? 'bg-brand-primarySoft text-brand-primary font-medium'
-                : 'bg-white border border-border text-text-secondary hover:border-brand-primary hover:text-brand-primary',
-            )}
-          >
-            {r}
-            {active && <X className="size-3" aria-hidden />}
-          </button>
-        );
-      })}
-
-      <span className="w-px bg-border mx-1" />
-
-      {/* Overdue quick filter */}
-      <button
-        type="button"
-        onClick={() => setFilter('overdue', currentOverdue ? '' : '1')}
-        className={cn(
-          'inline-flex h-6 items-center gap-1 rounded px-2 text-xs transition-colors',
-          currentOverdue
-            ? 'font-medium'
-            : 'bg-white border border-border text-text-secondary hover:text-[#FF7D00] hover:border-[#FF7D00]',
-        )}
-        style={
-          currentOverdue
-            ? { backgroundColor: '#FFF3E0', color: '#FF7D00', borderWidth: 0 }
-            : undefined
-        }
-      >
-        期限超過のみ
-        {currentOverdue && <X className="size-3" aria-hidden />}
-      </button>
+          {hasAny && (
+            <button
+              type="button"
+              onClick={() => {
+                const params = new URLSearchParams();
+                router.push(`/cross-sell?${params.toString()}`);
+              }}
+              className="inline-flex h-7 items-center px-2 text-xs text-text-tertiary transition-colors hover:text-text-primary"
+            >
+              クリア
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

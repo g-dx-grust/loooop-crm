@@ -2,6 +2,70 @@
 
 import { db, looopContracts, crossSellOpportunities, activities, auditLogs, eq, and, isNull } from '@looop/db';
 import { revalidatePath } from 'next/cache';
+import { LOOOP_PAYMENT_METHODS, LOOOP_PLAN_CODES } from '@/lib/constants';
+
+export interface ApplicationFormInput {
+  customerId: string;
+  applicationDate?: string | null;
+  contractDate?: string | null;
+  supplyStartDate?: string | null;
+  planCode: string;
+  paymentMethod: string;
+  status: string;
+  cancelDate?: string | null;
+  terminationDate?: string | null;
+  cancelReason?: string | null;
+  memo?: string | null;
+}
+
+export async function createApplication(
+  input: ApplicationFormInput,
+): Promise<{ success: boolean; error?: string; id?: string }> {
+  try {
+    if (!input.customerId) return { success: false, error: '顧客を選択してください' };
+    if (!(LOOOP_PAYMENT_METHODS as readonly string[]).includes(input.paymentMethod)) {
+      return { success: false, error: '支払方法が不正です' };
+    }
+    if (!(LOOOP_PLAN_CODES as readonly string[]).includes(input.planCode)) {
+      return { success: false, error: '対象プランが不正です' };
+    }
+
+    const now = new Date();
+    const result = await db
+      .insert(looopContracts)
+      .values({
+        customerId: input.customerId,
+        planCode: input.planCode,
+        paymentMethod: input.paymentMethod,
+        status: input.status,
+        applicationDate: input.applicationDate || null,
+        contractDate: input.contractDate || null,
+        supplyStartDate: input.supplyStartDate || null,
+        cancelDate: input.cancelDate || null,
+        terminationDate: input.terminationDate || null,
+        cancelReason: input.cancelReason || null,
+        memo: input.memo || null,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning({ id: looopContracts.id });
+
+    await db.insert(auditLogs).values({
+      action: 'create_application',
+      resourceType: 'looop_contract',
+      resourceId: result[0]?.id ?? null,
+      diff: input,
+      createdAt: now,
+    });
+
+    revalidatePath('/looop');
+    revalidatePath('/customers');
+    return { success: true, id: result[0]?.id };
+  } catch (err) {
+    console.error('createApplication error:', err);
+    return { success: false, error: '保存に失敗しました' };
+  }
+}
 
 export async function updateLooopStatus(
   contractId: string,
@@ -32,10 +96,14 @@ export async function updateLooopStatus(
       updates.cancelDate = now.toISOString().slice(0, 10);
       updates.cancelReason = reason ?? '';
     }
-    if (status === 'opened' && !prev.openedDate) {
+    if (status === 'terminated') {
+      updates.terminationDate = now.toISOString().slice(0, 10);
+      if (reason) updates.cancelReason = reason;
+    }
+    if (status === 'completed' && !prev.openedDate) {
       updates.openedDate = now.toISOString().slice(0, 10);
     }
-    if (status === 'contracted' && !prev.contractDate) {
+    if (status === 'completed' && !prev.contractDate) {
       updates.contractDate = now.toISOString().slice(0, 10);
     }
 
@@ -61,8 +129,8 @@ export async function updateLooopStatus(
       createdAt: now,
     });
 
-    // Auto-create hikari cross-sell opportunity when status becomes 'opened'
-    if (status === 'opened') {
+    // Auto-create hikari cross-sell opportunity when status becomes 'completed'
+    if (status === 'completed') {
       const existing = await db
         .select({ id: crossSellOpportunities.id })
         .from(crossSellOpportunities)
