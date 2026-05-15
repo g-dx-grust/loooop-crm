@@ -101,6 +101,12 @@ export async function upsertBill(
         })
         .where(eq(electricityBills.id, input.id));
 
+      // fee_master 計算値を looop_contracts.unit_price に同期
+      await db
+        .update(looopContracts)
+        .set({ unitPrice: calc.feeAmount, updatedAt: now })
+        .where(and(eq(looopContracts.customerId, input.customerId), isNull(looopContracts.deletedAt)));
+
       await db.insert(auditLogs).values({
         action: 'update_bill',
         resourceType: 'electricity_bill',
@@ -148,6 +154,12 @@ export async function upsertBill(
         updatedAt: now,
       })
       .returning({ id: electricityBills.id });
+
+    // fee_master 計算値を looop_contracts.unit_price に同期
+    await db
+      .update(looopContracts)
+      .set({ unitPrice: calc.feeAmount, updatedAt: now })
+      .where(and(eq(looopContracts.customerId, input.customerId), isNull(looopContracts.deletedAt)));
 
     const newId = insertResult[0]?.id;
 

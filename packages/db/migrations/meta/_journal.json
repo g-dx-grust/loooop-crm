@@ -29,6 +29,20 @@
       "when": 1747612800000,
       "tag": "0003_simplify_roles_lark_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1747699200000,
+      "tag": "0004_housing_telema",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1747785600000,
+      "tag": "0005_telemarketing_payment",
+      "breakpoints": true
     }
   ]
 }

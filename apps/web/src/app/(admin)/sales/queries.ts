@@ -8,6 +8,7 @@ import {
   db,
   electricityBills,
   looopContracts,
+  crossSellOpportunities,
   refunds,
   customers,
   users,
@@ -144,9 +145,18 @@ export interface StaffSalesRow {
   customerCount: number;
   applicationCount: number;
   openedCount: number;
+  cancelCount: number;
+  paidCount: number;
+  unbilledCount: number;
   billCount: number;
+  /** electricity_bills.feeAmount の合計（グロス手数料） */
   feeTotal: number;
-  netTotal: number;
+  /** electricity_bills.netFee の合計（Looopでんき売上） */
+  looopRevenue: number;
+  /** cross_sell_opportunities.actualRevenue の合計（成約済みのみ） */
+  crossSellRevenue: number;
+  /** looopRevenue + crossSellRevenue */
+  totalRevenue: number;
 }
 
 export async function getStaffSales(month?: string): Promise<StaffSalesRow[]> {
@@ -162,19 +172,23 @@ export async function getStaffSales(month?: string): Promise<StaffSalesRow[]> {
     .where(isNull(customers.deletedAt))
     .groupBy(customers.createdBy, users.displayName);
 
-  // Applications by staff (joined via customer.createdBy)
-  const applicationsByStaff = await db
+  // Applications / opened / cancelled / paid / unbilled by staff
+  const contractsByStaff = await db
     .select({
       staffId: customers.createdBy,
       applied: sql<number>`coalesce(sum(case when ${looopContracts.applicationDate} is not null then 1 else 0 end), 0)`,
       opened: sql<number>`coalesce(sum(case when ${looopContracts.status} = 'opened' then 1 else 0 end), 0)`,
+      completed: sql<number>`coalesce(sum(case when ${looopContracts.status} = 'completed' then 1 else 0 end), 0)`,
+      cancelled: sql<number>`coalesce(sum(case when ${looopContracts.status} = 'cancelled' then 1 else 0 end), 0)`,
+      paid: sql<number>`coalesce(sum(case when ${looopContracts.paymentStatus} = 'paid' then 1 else 0 end), 0)`,
+      unbilled: sql<number>`coalesce(sum(case when ${looopContracts.paymentStatus} = 'unbilled' and ${looopContracts.status} != 'cancelled' then 1 else 0 end), 0)`,
     })
     .from(looopContracts)
     .innerJoin(customers, eq(looopContracts.customerId, customers.id))
     .where(and(isNull(looopContracts.deletedAt), isNull(customers.deletedAt)))
     .groupBy(customers.createdBy);
 
-  // Bills by staff
+  // Looop electricity bill revenue by staff
   const billsByStaff = await db
     .select({
       staffId: customers.createdBy,
@@ -192,6 +206,23 @@ export async function getStaffSales(month?: string): Promise<StaffSalesRow[]> {
     )
     .groupBy(customers.createdBy);
 
+  // Cross-sell revenue by staff (status='won' のみ)
+  const crossSellByStaff = await db
+    .select({
+      staffId: customers.createdBy,
+      revenue: sql<number>`coalesce(sum(${crossSellOpportunities.actualRevenue}), 0)`,
+    })
+    .from(crossSellOpportunities)
+    .innerJoin(customers, eq(crossSellOpportunities.customerId, customers.id))
+    .where(
+      and(
+        isNull(crossSellOpportunities.deletedAt),
+        isNull(customers.deletedAt),
+        eq(crossSellOpportunities.status, 'won'),
+      ),
+    )
+    .groupBy(customers.createdBy);
+
   const map = new Map<string, StaffSalesRow>();
   for (const r of customersByStaff) {
     const id = r.staffId ?? '';
@@ -201,17 +232,25 @@ export async function getStaffSales(month?: string): Promise<StaffSalesRow[]> {
       customerCount: Number(r.count),
       applicationCount: 0,
       openedCount: 0,
+      cancelCount: 0,
+      paidCount: 0,
+      unbilledCount: 0,
       billCount: 0,
       feeTotal: 0,
-      netTotal: 0,
+      looopRevenue: 0,
+      crossSellRevenue: 0,
+      totalRevenue: 0,
     });
   }
-  for (const r of applicationsByStaff) {
+  for (const r of contractsByStaff) {
     const id = r.staffId ?? '';
     const row = map.get(id);
     if (row) {
       row.applicationCount = Number(r.applied);
-      row.openedCount = Number(r.opened);
+      row.openedCount = Number(r.opened) + Number(r.completed);
+      row.cancelCount = Number(r.cancelled);
+      row.paidCount = Number(r.paid);
+      row.unbilledCount = Number(r.unbilled);
     }
   }
   for (const r of billsByStaff) {
@@ -220,11 +259,22 @@ export async function getStaffSales(month?: string): Promise<StaffSalesRow[]> {
     if (row) {
       row.billCount = Number(r.count);
       row.feeTotal = Number(r.fee);
-      row.netTotal = Number(r.net);
+      row.looopRevenue = Number(r.net);
+    }
+  }
+  for (const r of crossSellByStaff) {
+    const id = r.staffId ?? '';
+    const row = map.get(id);
+    if (row) {
+      row.crossSellRevenue = Number(r.revenue);
     }
   }
 
-  return Array.from(map.values()).sort((a, b) => b.netTotal - a.netTotal);
+  for (const row of map.values()) {
+    row.totalRevenue = row.looopRevenue + row.crossSellRevenue;
+  }
+
+  return Array.from(map.values()).sort((a, b) => b.totalRevenue - a.totalRevenue);
 }
 
 export interface PaymentMethodCount {

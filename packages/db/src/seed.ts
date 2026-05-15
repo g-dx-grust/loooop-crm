@@ -270,6 +270,52 @@ export async function seed() {
   }
 
   console.log('  ✓ demo customers (10) with leads, contracts, cross-sell, consents');
+
+  // ---------------------------------------------------------------------------
+  // Demo electricity bills (fee_master から計算した値で設定)
+  // 500〜749kWh → fee 29,500 / admin 2,000 / net 27,500
+  // 750〜999kWh → fee 47,500 / admin 2,000 / net 45,500
+  // 200〜499kWh → fee 10,000 / admin 2,000 / net  8,000
+  // ---------------------------------------------------------------------------
+  const billData = [
+    { key: 'dc-001', custKey: 'dc-001', billMonth: '2026-04', usageKwh: 620, fee: 29500, adminFee: 2000, net: 27500, feeKey: 'fee-bank-003' },
+    { key: 'dc-002', custKey: 'dc-002', billMonth: '2026-05', usageKwh: 810, fee: 47500, adminFee: 2000, net: 45500, feeKey: 'fee-bank-004' },
+    { key: 'dc-006', custKey: 'dc-006', billMonth: '2026-05', usageKwh: 320, fee: 10000, adminFee: 2000, net:  8000, feeKey: 'fee-bank-002' },
+    { key: 'dc-010', custKey: 'dc-010', billMonth: '2026-04', usageKwh: 850, fee: 47500, adminFee: 2000, net: 45500, feeKey: 'fee-bank-004' },
+  ];
+
+  for (const b of billData) {
+    const cid = uid(b.custKey);
+    await db.execute(sql`
+      INSERT INTO electricity_bills (
+        id, customer_id, contract_id, bill_month,
+        usage_kwh, payment_method, plan_code,
+        fee_amount, admin_fee, net_fee,
+        minimum_applied, refund_flagged,
+        fee_master_id, created_at, updated_at
+      )
+      VALUES (
+        ${uid('bill-' + b.key)}::uuid,
+        ${cid}::uuid,
+        (SELECT id FROM looop_contracts WHERE customer_id = ${cid}::uuid LIMIT 1),
+        ${b.billMonth},
+        ${b.usageKwh}, 'bank_account', 'smart_time_one_lighting',
+        ${b.fee}, ${b.adminFee}, ${b.net},
+        0, 0,
+        ${uid(b.feeKey)}::uuid,
+        now(), now()
+      )
+      ON CONFLICT (customer_id, bill_month) DO NOTHING
+    `);
+    // looop_contracts.unit_price を計算値で上書き
+    await db.execute(sql`
+      UPDATE looop_contracts
+      SET unit_price = ${b.fee}, updated_at = now()
+      WHERE customer_id = ${cid}::uuid AND deleted_at IS NULL
+    `);
+  }
+  console.log('  ✓ electricity_bills (4 demo records with fee_master-calculated values)');
+
   console.log('');
   console.log('✅ Seed complete!');
   console.log('   管理者 (password: Looop2026!):');

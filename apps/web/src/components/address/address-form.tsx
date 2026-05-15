@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MapPin, Loader2, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/cn';
 import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
 
 // ---------------------------------------------------------------------------
@@ -17,6 +18,10 @@ export interface AddressFormValues {
   building: string;
   residenceType: string;
   ownershipType: string;
+  /** 持ち家のみ表示・必須。値: 'yes' | 'no' | 'unknown' */
+  hasSolarPanel: string;
+  /** 持ち家のみ表示・必須。値: 'yes' | 'no' | 'unknown' */
+  hasBattery: string;
   latitude?: number;
   longitude?: number;
   googlePlaceId?: string;
@@ -540,6 +545,140 @@ function MapPinSection({
 }
 
 // ---------------------------------------------------------------------------
+// SelectField: 共通セレクト
+// ---------------------------------------------------------------------------
+const SOLAR_BATTERY_OPTIONS = [
+  { value: 'yes',     label: 'あり' },
+  { value: 'no',      label: 'なし' },
+  { value: 'unknown', label: '不明' },
+] as const;
+
+function SelectField({
+  id,
+  label,
+  required,
+  value,
+  onChange,
+  options,
+  placeholder,
+  error,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  error?: string;
+}) {
+  return (
+    <div>
+      <FieldLabel htmlFor={id} required={required}>
+        {label}
+      </FieldLabel>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-required={required}
+        aria-invalid={!!error}
+        className={cn(
+          'h-10 w-full rounded border border-border bg-white px-3 text-base text-text-primary',
+          'focus:border-brand-primary focus:outline-none',
+          error && 'border-status-error',
+        )}
+      >
+        <option value="">{placeholder ?? '選択してください'}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      {error && <p className="mt-1 text-xs text-status-error">{error}</p>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// HousingSection: 住居種別・居住形態・太陽光・蓄電池
+// ---------------------------------------------------------------------------
+function HousingSection({
+  value,
+  onChange,
+  errors,
+}: {
+  value: Pick<AddressFormValues, 'residenceType' | 'ownershipType' | 'hasSolarPanel' | 'hasBattery'>;
+  onChange: (partial: Pick<AddressFormValues, 'residenceType' | 'ownershipType' | 'hasSolarPanel' | 'hasBattery'>) => void;
+  errors?: Partial<Record<string, string>>;
+}) {
+  const isOwned = value.ownershipType === 'owned';
+
+  return (
+    <div className="space-y-3 rounded border border-border bg-bg-subtle px-3 py-3">
+      <p className="text-xs font-medium text-text-tertiary">住居情報</p>
+
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField
+          id="residence-type"
+          label="住居種別"
+          required
+          value={value.residenceType}
+          onChange={(v) => onChange({ ...value, residenceType: v })}
+          options={[
+            { value: 'detached',   label: '戸建て' },
+            { value: 'apartment',  label: '集合住宅' },
+          ]}
+          error={errors?.residenceType}
+        />
+        <SelectField
+          id="ownership-type"
+          label="居住形態"
+          required
+          value={value.ownershipType}
+          onChange={(v) => {
+            const next = { ...value, ownershipType: v };
+            // 賃貸に変えた場合は太陽光・蓄電池をクリア
+            if (v !== 'owned') {
+              next.hasSolarPanel = '';
+              next.hasBattery = '';
+            }
+            onChange(next);
+          }}
+          options={[
+            { value: 'owned',  label: '持ち家' },
+            { value: 'rented', label: '賃貸' },
+          ]}
+          error={errors?.ownershipType}
+        />
+      </div>
+
+      {isOwned && (
+        <div className="grid grid-cols-2 gap-3">
+          <SelectField
+            id="has-solar-panel"
+            label="太陽光の有無"
+            required
+            value={value.hasSolarPanel}
+            onChange={(v) => onChange({ ...value, hasSolarPanel: v })}
+            options={SOLAR_BATTERY_OPTIONS as unknown as { value: string; label: string }[]}
+            error={errors?.hasSolarPanel}
+          />
+          <SelectField
+            id="has-battery"
+            label="蓄電池の有無"
+            required
+            value={value.hasBattery}
+            onChange={(v) => onChange({ ...value, hasBattery: v })}
+            options={SOLAR_BATTERY_OPTIONS as unknown as { value: string; label: string }[]}
+            error={errors?.hasBattery}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main AddressForm
 // ---------------------------------------------------------------------------
 export function AddressForm({ value, onChange, errors }: AddressFormProps) {
@@ -577,6 +716,12 @@ export function AddressForm({ value, onChange, errors }: AddressFormProps) {
         onChangeCity={(v) => update({ city: v })}
         onChangeStreet={(v) => update({ street: v })}
         onChangeBuilding={(v) => update({ building: v })}
+        errors={errors}
+      />
+
+      <HousingSection
+        value={value}
+        onChange={(partial) => update(partial)}
         errors={errors}
       />
 

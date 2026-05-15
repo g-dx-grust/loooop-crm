@@ -2,29 +2,32 @@ export const dynamic = 'force-dynamic';
 import { Suspense } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card } from '@/components/ui/card';
-import { getLooopContracts, getLooopSummary, getLooopCustomerOptions } from './queries';
+import { getLooopContracts, getLooopSummary, getLooopCustomerOptions, getLooopStaffOptions } from './queries';
 import { LooopStatusTabs } from './status-tabs';
 import { LooopTable } from './looop-table';
 import { LooopActionsBar } from './looop-actions-bar';
+import { LooopStaffFilter } from './staff-filter';
 import { formatCurrency } from '@/lib/format';
 import { getCurrentUser } from '@looop/auth';
 
 interface PageProps {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; staffId?: string }>;
 }
 
 export default async function LooopPage({ searchParams }: PageProps) {
   const [params, currentUser] = await Promise.all([searchParams, getCurrentUser()]);
   const isField = currentUser?.roleCodes.includes('field') ?? false;
   const statusFilter = params.status ?? '';
+  const staffIdParam = isField ? (currentUser?.id ?? '') : (params.staffId ?? '');
 
-  const [contracts, summary, customerOptions] = await Promise.all([
+  const [contracts, summary, customerOptions, staffOptions] = await Promise.all([
     getLooopContracts({
       status: statusFilter || undefined,
-      staffId: isField ? (currentUser?.id ?? '') : undefined,
+      staffId: staffIdParam || undefined,
     }),
     getLooopSummary(),
     getLooopCustomerOptions(),
+    isField ? Promise.resolve([]) : getLooopStaffOptions(),
   ]);
 
   return (
@@ -60,6 +63,11 @@ export default async function LooopPage({ searchParams }: PageProps) {
         <Suspense>
           <LooopStatusTabs />
         </Suspense>
+        {!isField && staffOptions.length > 0 && (
+          <Suspense>
+            <LooopStaffFilter staffOptions={staffOptions} currentStaffId={staffIdParam} />
+          </Suspense>
+        )}
         <LooopTable contracts={contracts} />
       </div>
     </>

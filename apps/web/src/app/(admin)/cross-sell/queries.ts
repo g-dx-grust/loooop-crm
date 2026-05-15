@@ -1,4 +1,4 @@
-import { db, crossSellOpportunities, customers, leads, users, eq, and, isNull, desc } from '@looop/db';
+import { db, crossSellOpportunities, customers, leads, users, eq, and, isNull, isNotNull, desc } from '@looop/db';
 
 export interface CrossSellFilters {
   productType?: string;
@@ -116,6 +116,23 @@ export async function getCrossSellOpportunities(
   }
 
   return deduped;
+}
+
+export interface CrossSellStaffOption {
+  id: string;
+  displayName: string;
+}
+
+export async function getCrossSellStaffOptions(): Promise<CrossSellStaffOption[]> {
+  const rows = await db
+    .selectDistinct({ id: users.id, displayName: users.displayName })
+    .from(users)
+    .innerJoin(leads, eq(leads.staffId, users.id))
+    .innerJoin(customers, eq(customers.id, leads.customerId))
+    .innerJoin(crossSellOpportunities, eq(crossSellOpportunities.customerId, customers.id))
+    .where(and(isNull(crossSellOpportunities.deletedAt), isNotNull(leads.staffId)))
+    .orderBy(users.displayName);
+  return rows.map((r) => ({ id: r.id, displayName: r.displayName }));
 }
 
 export async function getCrossSellSummary(): Promise<CrossSellSummary> {

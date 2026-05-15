@@ -10,6 +10,10 @@ export const events = pgTable('events', {
   area: text('area'),
   staffId: uuid('staff_id').references(() => users.id, { onDelete: 'set null' }),
   status: text('status').notNull().default('active'),
+  /** 'event' = 催事 / 'telema' = テレマ。テレマは季節指数計算対象外 */
+  sourceType: text('source_type').notNull().default('event'),
+  /** 催事条件 e.g. '平日', '土日', 'GW' */
+  condition: text('condition'),
   cost: integer('cost'),
   memo: text('memo'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

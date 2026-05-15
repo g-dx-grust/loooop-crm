@@ -25,9 +25,14 @@ export type Permission =
   | 'nav.intake'
   | 'nav.customers'
   | 'nav.looop'
+  | 'nav.bills'
+  | 'nav.refunds'
   | 'nav.cross_sell'
   | 'nav.solar_handoff'
+  | 'nav.sales'
   | 'nav.kpi'
+  | 'nav.fee_master'
+  | 'nav.events'
   | 'nav.admin';
 
 const ALL_PERMS: Permission[] = [
@@ -45,9 +50,14 @@ const ALL_PERMS: Permission[] = [
   'nav.intake',
   'nav.customers',
   'nav.looop',
+  'nav.bills',
+  'nav.refunds',
   'nav.cross_sell',
   'nav.solar_handoff',
+  'nav.sales',
   'nav.kpi',
+  'nav.fee_master',
+  'nav.events',
   'nav.admin',
 ];
 

@@ -25,6 +25,8 @@ const EMPTY_ADDRESS: AddressFormValues = {
   building: '',
   residenceType: '',
   ownershipType: '',
+  hasSolarPanel: '',
+  hasBattery: '',
   pinConfirmed: false,
   pinCorrected: false,
   accuracyStatus: 'unconfirmed',
@@ -34,12 +36,19 @@ const EMPTY_CONSENT: ConsentValues = {
   personalInfoConsent: false,
 };
 
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  credit_card: 'クレカ',
+  bank_account: '口座',
+};
+
 const EMPTY_FORM: IntakeFormValues = {
   name: '',
   kana: '',
   phone: '',
   birthDate: '',
   email: '',
+  isTelemarketingAcquisition: false,
+  paymentMethod: 'credit_card',
   address: EMPTY_ADDRESS,
   monthlyElectricBill: '',
   wattage: '',
@@ -258,6 +267,40 @@ function Step1({
           </p>
         )}
       </div>
+
+      <div>
+        <FieldLabel htmlFor="payment-method" required>
+          支払い方法
+        </FieldLabel>
+        <select
+          id="payment-method"
+          value={form.paymentMethod}
+          onChange={(e) => onChange({ paymentMethod: e.target.value })}
+          className="h-10 w-full rounded border border-border bg-white px-3 text-base text-text-primary focus:border-brand-primary focus:outline-none"
+        >
+          {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex items-start gap-3 rounded border border-border bg-bg-subtle px-3 py-2.5">
+        <input
+          id="is-telema"
+          type="checkbox"
+          checked={form.isTelemarketingAcquisition}
+          onChange={(e) => onChange({ isTelemarketingAcquisition: e.target.checked })}
+          className="mt-0.5 size-4 shrink-0 rounded border-border accent-brand-primary"
+        />
+        <div className="min-w-0">
+          <label htmlFor="is-telema" className="block text-sm font-medium text-text-primary cursor-pointer">
+            テレマ獲得
+          </label>
+          <p className="mt-0.5 text-xs text-text-tertiary">
+            電話マーケティング経由の申込。チェック時は売上23,000円固定・催事会場不要。
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -276,8 +319,14 @@ function Step3({
   events: EventOption[];
   errors: Partial<Record<string, string>>;
 }) {
+  const isTelema = form.isTelemarketingAcquisition;
   return (
     <div className="space-y-4">
+      {isTelema && (
+        <div className="rounded border border-border bg-bg-subtle px-3 py-2 text-xs text-text-secondary">
+          テレマ獲得のため売上は<strong className="font-semibold text-text-primary">23,000円固定</strong>で計算されます。催事会場の選択は不要です。
+        </div>
+      )}
       <div>
         <FieldLabel htmlFor="monthly-bill" required>
           月間の電気料金
@@ -354,35 +403,37 @@ function Step3({
         )}
       </div>
 
-      <div>
-        <FieldLabel htmlFor="event-id" required>
-          催事会場
-        </FieldLabel>
-        <select
-          id="event-id"
-          value={form.eventId}
-          onChange={(e) => onChange({ eventId: e.target.value })}
-          aria-required
-          aria-invalid={!!errors.eventId}
-          className={cn(
-            'h-10 w-full rounded border border-border bg-white px-3 text-base text-text-primary',
-            'focus:border-brand-primary focus:outline-none',
-            'disabled:cursor-not-allowed disabled:bg-bg-muted',
-            errors.eventId && 'border-status-error',
+      {!isTelema && (
+        <div>
+          <FieldLabel htmlFor="event-id" required>
+            催事会場
+          </FieldLabel>
+          <select
+            id="event-id"
+            value={form.eventId}
+            onChange={(e) => onChange({ eventId: e.target.value })}
+            aria-required
+            aria-invalid={!!errors.eventId}
+            className={cn(
+              'h-10 w-full rounded border border-border bg-white px-3 text-base text-text-primary',
+              'focus:border-brand-primary focus:outline-none',
+              'disabled:cursor-not-allowed disabled:bg-bg-muted',
+              errors.eventId && 'border-status-error',
+            )}
+          >
+            <option value="">会場を選択してください</option>
+            {events.map((ev) => (
+              <option key={ev.id} value={ev.id}>
+                {ev.venueName ?? ev.eventName}
+                {ev.eventDate ? ` (${ev.eventDate})` : ''}
+              </option>
+            ))}
+          </select>
+          {errors.eventId && (
+            <p className="mt-1 text-xs text-status-error">{errors.eventId}</p>
           )}
-        >
-          <option value="">会場を選択してください</option>
-          {events.map((ev) => (
-            <option key={ev.id} value={ev.id}>
-              {ev.venueName ?? ev.eventName}
-              {ev.eventDate ? ` (${ev.eventDate})` : ''}
-            </option>
-          ))}
-        </select>
-        {errors.eventId && (
-          <p className="mt-1 text-xs text-status-error">{errors.eventId}</p>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -492,13 +543,21 @@ export function IntakeWizard({ events, consentText }: IntakeWizardProps) {
       if (!form.address.prefecture.trim()) newErrors.prefecture = '都道府県を入力してください。';
       if (!form.address.city.trim()) newErrors.city = '市区町村を入力してください。';
       if (!form.address.street.trim()) newErrors.street = '番地を入力してください。';
+      if (!form.address.residenceType) newErrors.residenceType = '住居種別を選択してください。';
+      if (!form.address.ownershipType)  newErrors.ownershipType  = '居住形態を選択してください。';
+      if (form.address.ownershipType === 'owned') {
+        if (!form.address.hasSolarPanel) newErrors.hasSolarPanel = '太陽光の有無を選択してください。';
+        if (!form.address.hasBattery)    newErrors.hasBattery    = '蓄電池の有無を選択してください。';
+      }
       if (!form.address.pinConfirmed) {
         newErrors.pinConfirmed = '地図のピン位置を確定してください。';
       }
     }
 
     if (s === 3) {
-      if (!form.eventId) newErrors.eventId = '催事会場を選択してください。';
+      if (!form.isTelemarketingAcquisition && !form.eventId) {
+        newErrors.eventId = '催事会場を選択してください。';
+      }
 
       if (!form.monthlyElectricBill.trim()) {
         newErrors.monthlyElectricBill = '月間の電気料金を入力してください。';
@@ -592,7 +651,7 @@ export function IntakeWizard({ events, consentText }: IntakeWizardProps) {
       {/* Header */}
       <div className="flex items-center justify-between pb-3">
         <div>
-          <h1 className="text-display text-text-primary">催事フォーム</h1>
+          <h1 className="text-display text-text-primary">新規登録フォーム</h1>
           <p className="mt-0.5 text-xs text-text-tertiary">{STEP_LABELS[step - 1]}</p>
         </div>
         {hasDraft && (

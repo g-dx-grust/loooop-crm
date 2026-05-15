@@ -30,6 +30,8 @@ export interface IntakeFormValues {
   phone: string;
   birthDate: string;
   email: string;
+  isTelemarketingAcquisition: boolean;
+  paymentMethod: string;
   // Step 2
   address: AddressFormValues;
   // Step 3
@@ -162,27 +164,29 @@ export async function createCustomer(
       return { success: false, error: '明細の利用月は未来月を指定できません。' };
     }
 
-    if (!input.eventId) {
+    if (!input.isTelemarketingAcquisition && !input.eventId) {
       return { success: false, error: '催事会場を選択してください。' };
     }
     if (!input.consent.personalInfoConsent) {
       return { success: false, error: '個人情報の取得・利用への同意が必要です。' };
     }
 
-    const activeEvent = await db
-      .select({ id: events.id })
-      .from(events)
-      .where(
-        and(
-          eq(events.id, input.eventId),
-          isNull(events.deletedAt),
-          sql`${events.status} IN ('active', 'scheduled')`,
-        ),
-      )
-      .limit(1);
+    if (input.eventId) {
+      const activeEvent = await db
+        .select({ id: events.id })
+        .from(events)
+        .where(
+          and(
+            eq(events.id, input.eventId),
+            isNull(events.deletedAt),
+            sql`${events.status} IN ('active', 'scheduled')`,
+          ),
+        )
+        .limit(1);
 
-    if (!activeEvent[0]) {
-      return { success: false, error: '選択した催事会場は現在利用できません。' };
+      if (!activeEvent[0]) {
+        return { success: false, error: '選択した催事会場は現在利用できません。' };
+      }
     }
 
     const consentText = await resolveLatestConsentText();
@@ -234,7 +238,12 @@ export async function createCustomer(
         accuracyStatus: addr.accuracyStatus || 'unconfirmed',
         residenceType: addr.residenceType || null,
         ownershipType: addr.ownershipType || null,
+        hasSolarPanel: addr.ownershipType === 'owned' ? (addr.hasSolarPanel || null) : null,
+        hasBattery:    addr.ownershipType === 'owned' ? (addr.hasBattery    || null) : null,
       });
+
+      const isTelema = input.isTelemarketingAcquisition === true;
+      const paymentMethod = input.paymentMethod || 'credit_card';
 
       // 3. Insert lead
       const leadInsert = await tx
@@ -244,13 +253,15 @@ export async function createCustomer(
           eventId: input.eventId || null,
           staffId: null,
           leadStatus: 'new',
-          source: 'event',
+          source: isTelema ? 'telema' : 'event',
         })
         .returning({ id: leads.id });
 
       const leadId = leadInsert[0]?.id ?? null;
 
-      // 4. Insert looop_contract (月間電気料金・ワット数・利用月は必須なので常に挿入)
+      // 4. Insert looop_contract
+      // テレマ獲得時は売上 23,000 円固定、季節指数・催事単価計算なし
+      const unitPrice = isTelema ? 23000 : 30000;
       await tx.insert(looopContracts).values({
         customerId: custId,
         leadId,
@@ -258,6 +269,9 @@ export async function createCustomer(
         wattage,
         billUsageMonth: input.billUsageMonth,
         status: 'applied',
+        paymentMethod,
+        isTelemarketingAcquisition: isTelema,
+        unitPrice,
       });
 
       // 5. Insert consents

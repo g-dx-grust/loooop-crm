@@ -1,4 +1,4 @@
-import { date, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, date, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { customers } from './customers';
 import { leads } from './leads';
 
@@ -18,7 +18,8 @@ export const looopContracts = pgTable(
     billUsageMonth: text('bill_usage_month'),
     // Looop プラン / 支払方法（仕様書 §2 申込管理）
     planCode: text('plan_code').notNull().default('smart_time_one_lighting'),
-    paymentMethod: text('payment_method').notNull().default('bank_account'),
+    paymentMethod: text('payment_method').notNull().default('credit_card'),
+    isTelemarketingAcquisition: boolean('is_telemarketing_acquisition').notNull().default(false),
     supplyStartDate: date('supply_start_date'),
     terminationDate: date('termination_date'),
     memo: text('memo'),

@@ -79,6 +79,8 @@ export const customerAddresses = pgTable(
     accuracyStatus: text('accuracy_status').notNull().default('unconfirmed'),
     residenceType: text('residence_type'),
     ownershipType: text('ownership_type'),
+    hasSolarPanel: text('has_solar_panel'),
+    hasBattery: text('has_battery'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),

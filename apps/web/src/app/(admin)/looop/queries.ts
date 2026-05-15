@@ -1,4 +1,4 @@
-import { db, looopContracts, customers, leads, events, users, eq, and, isNull, desc } from '@looop/db';
+import { db, looopContracts, customers, leads, events, users, eq, and, isNull, desc, isNotNull } from '@looop/db';
 
 export interface LooopCustomerOption {
   id: string;
@@ -12,6 +12,22 @@ export async function getLooopCustomerOptions(): Promise<LooopCustomerOption[]> 
     .where(isNull(customers.deletedAt))
     .orderBy(customers.name);
   return rows.map((r) => ({ id: r.id, name: r.name }));
+}
+
+export interface StaffOption {
+  id: string;
+  displayName: string;
+}
+
+export async function getLooopStaffOptions(): Promise<StaffOption[]> {
+  const rows = await db
+    .selectDistinct({ id: users.id, displayName: users.displayName })
+    .from(users)
+    .innerJoin(leads, eq(leads.staffId, users.id))
+    .innerJoin(looopContracts, eq(looopContracts.leadId, leads.id))
+    .where(and(isNull(looopContracts.deletedAt), isNotNull(leads.staffId)))
+    .orderBy(users.displayName);
+  return rows.map((r) => ({ id: r.id, displayName: r.displayName }));
 }
 
 export interface LooopContractFilters {

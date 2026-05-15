@@ -21,7 +21,7 @@ type RoleCode = 'admin' | 'field';
 
 const ROLE_OPTIONS: { value: RoleCode; label: string; description: string }[] = [
   { value: 'admin', label: '管理者',       description: '全機能の閲覧・変更、ユーザー管理、催事マスタ編集、CSV出力。' },
-  { value: 'field', label: '現場スタッフ', description: '催事フォームから自身が担当した顧客・案件のみ閲覧・編集。' },
+  { value: 'field', label: '現場スタッフ', description: '新規登録フォームから自身が担当した顧客・案件のみ閲覧・編集。' },
 ];
 
 const ROLE_LABEL: Record<RoleCode, string> = {

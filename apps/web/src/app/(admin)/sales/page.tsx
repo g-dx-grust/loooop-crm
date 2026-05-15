@@ -59,39 +59,58 @@ export default async function SalesPage({ searchParams }: PageProps) {
           }
         >
           <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border bg-bg-subtle text-xs text-text-secondary">
-                <th className="h-9 whitespace-nowrap px-3 text-left font-medium">担当者</th>
-                <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">担当顧客数</th>
-                <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">申込件数</th>
-                <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">開通件数</th>
-                <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">明細件数</th>
-                <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">手数料</th>
-                <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">差引手数料</th>
-              </tr>
-            </thead>
-            <tbody>
-              {staff.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="h-10 px-4 text-center text-text-tertiary">
-                    データがありません
-                  </td>
+              <thead>
+                <tr className="border-b border-border bg-bg-subtle text-xs text-text-secondary">
+                  <th className="h-9 whitespace-nowrap px-3 text-left font-medium">担当者</th>
+                  <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">申込</th>
+                  <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">完了</th>
+                  <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">キャンセル</th>
+                  <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">入金済み</th>
+                  <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">未請求</th>
+                  <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">Loopでんき売上</th>
+                  <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">クロスセル売上</th>
+                  <th className="h-9 whitespace-nowrap px-3 text-right font-medium tabular-nums">合計売上</th>
                 </tr>
-              ) : (
-                staff.map((s) => (
-                  <tr key={s.staffId} className="h-10 border-b border-border hover:bg-bg-subtle">
-                    <td className="whitespace-nowrap px-3 font-medium text-text-primary">{s.staffName}</td>
-                    <td className="whitespace-nowrap px-3 text-right tabular-nums">{fmt(s.customerCount)}</td>
-                    <td className="whitespace-nowrap px-3 text-right tabular-nums">{fmt(s.applicationCount)}</td>
-                    <td className="whitespace-nowrap px-3 text-right tabular-nums">{fmt(s.openedCount)}</td>
-                    <td className="whitespace-nowrap px-3 text-right tabular-nums">{fmt(s.billCount)}</td>
-                    <td className="whitespace-nowrap px-3 text-right tabular-nums">{fmt(s.feeTotal)}円</td>
-                    <td className="whitespace-nowrap px-3 text-right tabular-nums font-medium">{fmt(s.netTotal)}円</td>
+              </thead>
+              <tbody>
+                {staff.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="h-10 px-4 text-center text-text-tertiary">
+                      データがありません
+                    </td>
                   </tr>
-                ))
+                ) : (
+                  staff.map((s) => (
+                    <tr key={s.staffId} className="h-10 border-b border-border hover:bg-bg-subtle">
+                      <td className="whitespace-nowrap px-3 font-medium text-text-primary">{s.staffName}</td>
+                      <td className="whitespace-nowrap px-3 text-right tabular-nums text-text-secondary">{fmt(s.applicationCount)}</td>
+                      <td className="whitespace-nowrap px-3 text-right tabular-nums text-status-success">{fmt(s.openedCount)}</td>
+                      <td className="whitespace-nowrap px-3 text-right tabular-nums text-status-error">{fmt(s.cancelCount)}</td>
+                      <td className="whitespace-nowrap px-3 text-right tabular-nums">{fmt(s.paidCount)}</td>
+                      <td className="whitespace-nowrap px-3 text-right tabular-nums text-text-tertiary">{fmt(s.unbilledCount)}</td>
+                      <td className="whitespace-nowrap px-3 text-right tabular-nums">{fmt(s.looopRevenue)}円</td>
+                      <td className="whitespace-nowrap px-3 text-right tabular-nums">{fmt(s.crossSellRevenue)}円</td>
+                      <td className="whitespace-nowrap px-3 text-right tabular-nums font-medium text-text-primary">{fmt(s.totalRevenue)}円</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+              {staff.length > 0 && (
+                <tfoot>
+                  <tr className="border-t-2 border-border bg-bg-subtle text-xs font-medium">
+                    <td className="whitespace-nowrap px-3 py-2 text-text-secondary">合計</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-text-secondary">{fmt(staff.reduce((s, r) => s + r.applicationCount, 0))}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-status-success">{fmt(staff.reduce((s, r) => s + r.openedCount, 0))}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-status-error">{fmt(staff.reduce((s, r) => s + r.cancelCount, 0))}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">{fmt(staff.reduce((s, r) => s + r.paidCount, 0))}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-text-tertiary">{fmt(staff.reduce((s, r) => s + r.unbilledCount, 0))}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">{fmt(staff.reduce((s, r) => s + r.looopRevenue, 0))}円</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">{fmt(staff.reduce((s, r) => s + r.crossSellRevenue, 0))}円</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-text-primary">{fmt(staff.reduce((s, r) => s + r.totalRevenue, 0))}円</td>
+                  </tr>
+                </tfoot>
               )}
-            </tbody>
-          </table>
+            </table>
         </Section>
 
         <Section title="月別 申込・契約・開通・キャンセル件数">

@@ -20,6 +20,7 @@ import { Pencil } from 'lucide-react';
 
 interface Props {
   items: CrossSellListItem[];
+  isAdmin?: boolean;
 }
 
 const interestRankTone: Record<string, BadgeTone> = {
@@ -28,7 +29,7 @@ const interestRankTone: Record<string, BadgeTone> = {
   C: 'neutral',
 };
 
-export function CrossSellTable({ items }: Props) {
+export function CrossSellTable({ items, isAdmin = true }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [form, setForm] = useState<{
     status: string;
@@ -123,6 +124,14 @@ export function CrossSellTable({ items }: Props) {
                       </span>
                     )}
                   </dd>
+                  {isAdmin && item.actualRevenue != null && (
+                    <>
+                      <dt className="text-text-tertiary">売上</dt>
+                      <dd className="tabular-nums text-text-secondary">
+                        {item.actualRevenue.toLocaleString('ja-JP')}円
+                      </dd>
+                    </>
+                  )}
                 </dl>
                 <div className="mt-2.5 flex items-center justify-end border-t border-border pt-2">
                   <span className="inline-flex items-center gap-1 text-xs text-brand-primary">
@@ -147,13 +156,14 @@ export function CrossSellTable({ items }: Props) {
               <th className="h-9 px-4 text-left font-medium">ステータス</th>
               <th className="h-9 px-4 text-left font-medium">次回アクション</th>
               <th className="h-9 px-4 text-left font-medium">担当者</th>
+              {isAdmin && <th className="h-9 px-4 text-right font-medium">売上</th>}
               <th className="h-9 px-4 text-left font-medium">操作</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={7} className="h-10 px-4 text-center text-text-tertiary">
+                <td colSpan={isAdmin ? 8 : 7} className="h-10 px-4 text-center text-text-tertiary">
                   データがありません
                 </td>
               </tr>
@@ -196,6 +206,13 @@ export function CrossSellTable({ items }: Props) {
                     </span>
                   </td>
                   <td className="px-4 text-text-secondary">{item.staffName ?? '—'}</td>
+                  {isAdmin && (
+                    <td className="px-4 text-right tabular-nums text-text-secondary">
+                      {item.actualRevenue != null
+                        ? item.actualRevenue.toLocaleString('ja-JP') + '円'
+                        : '—'}
+                    </td>
+                  )}
                   <td className="px-4">
                     <Button variant="ghost" size="sm" onClick={() => openSheet(item)}>
                       編集

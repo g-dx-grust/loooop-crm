@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Users, Zap, ShoppingBag, Sun, BarChart3, Settings,
   ClipboardList, ChevronLeft, ChevronRight,
-  Receipt, TrendingUp, Undo2, Calculator,
+  Receipt, TrendingUp, Undo2, Calculator, CalendarDays,
   Menu, X, LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -29,7 +29,7 @@ type NavSection = {
 const NAV_SECTIONS: NavSection[] = [
   {
     items: [
-      { href: '/intake', label: '催事フォーム', icon: ClipboardList, perm: 'nav.intake' },
+      { href: '/intake', label: '新規登録フォーム', icon: ClipboardList, perm: 'nav.intake' },
     ],
   },
   {
@@ -51,10 +51,11 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'レポート・設定',
     items: [
-      { href: '/sales',       label: '売上集計',       icon: TrendingUp, perm: 'nav.sales' },
-      { href: '/kpi',         label: 'KPI',            icon: BarChart3,  perm: 'nav.kpi' },
-      { href: '/fee-master',  label: '手数料マスター', icon: Calculator, perm: 'nav.fee_master' },
-      { href: '/admin',       label: '管理',           icon: Settings,   perm: 'nav.admin' },
+      { href: '/sales',       label: '売上集計',         icon: TrendingUp,  perm: 'nav.sales' },
+      { href: '/kpi',         label: 'KPI',              icon: BarChart3,   perm: 'nav.kpi' },
+      { href: '/fee-master',  label: '手数料マスター',   icon: Calculator,  perm: 'nav.fee_master' },
+      { href: '/events',      label: '催事・テレマ管理', icon: CalendarDays, perm: 'nav.events' },
+      { href: '/admin',       label: '管理',             icon: Settings,    perm: 'nav.admin' },
     ],
   },
 ];
