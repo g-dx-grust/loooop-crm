@@ -11,6 +11,7 @@ import {
   consentTextVersions,
   auditLogs,
   events,
+  users,
   eq,
   and,
   isNull,
@@ -18,6 +19,7 @@ import {
   sql,
 } from '@looop/db';
 import { getCurrentUser } from '@looop/auth';
+import { sendLarkAcquisitionNotification } from '@/lib/lark-notify';
 import type { AddressFormValues } from '@/components/address/address-form';
 import type { ConsentValues } from '@/components/consent/consent-checkboxes';
 
@@ -310,6 +312,31 @@ export async function createCustomer(
 
       return custId;
     });
+
+    // Lark通知（fire-and-forget: 失敗しても登録は成功扱い）
+    void (async () => {
+      let eventName: string | null = null;
+      let venueName: string | null = null;
+      if (input.eventId) {
+        const ev = await db
+          .select({ eventName: events.eventName, venueName: events.venueName })
+          .from(events)
+          .where(eq(events.id, input.eventId))
+          .limit(1);
+        eventName = ev[0]?.eventName ?? null;
+        venueName = ev[0]?.venueName ?? null;
+      }
+      const staffRow = staffUserId
+        ? await db.select({ displayName: users.displayName }).from(users).where(eq(users.id, staffUserId)).limit(1)
+        : null;
+      await sendLarkAcquisitionNotification({
+        customerName: input.name,
+        staffName: staffRow?.[0]?.displayName ?? null,
+        eventName,
+        venueName,
+        isTelema: input.isTelemarketingAcquisition,
+      });
+    })();
 
     return { success: true, customerId };
   } catch (err) {

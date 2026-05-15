@@ -1,7 +1,10 @@
 'use server';
 
-import { db, events, auditLogs, eq, isNull, and } from '@looop/db';
+import { db, events, leads, eventCostItems, eventCostSplits, auditLogs, eq, isNull, and, sql } from '@looop/db';
 import { revalidatePath } from 'next/cache';
+import type { EventRow } from '@looop/db';
+
+export type EventWithCount = EventRow & { acquisitionCount: number };
 
 export interface EventFormInput {
   id?: string;
@@ -111,11 +114,144 @@ export async function deleteEvent(
   }
 }
 
-export async function getEventsForAdmin() {
+export async function getEventsForAdmin(): Promise<EventWithCount[]> {
   const rows = await db
-    .select()
+    .select({
+      id: events.id,
+      eventName: events.eventName,
+      venueName: events.venueName,
+      venueAddress: events.venueAddress,
+      eventDate: events.eventDate,
+      area: events.area,
+      staffId: events.staffId,
+      status: events.status,
+      sourceType: events.sourceType,
+      condition: events.condition,
+      cost: events.cost,
+      memo: events.memo,
+      createdAt: events.createdAt,
+      updatedAt: events.updatedAt,
+      deletedAt: events.deletedAt,
+      acquisitionCount: sql<number>`count(${leads.id})::int`,
+    })
     .from(events)
+    .leftJoin(leads, eq(leads.eventId, events.id))
     .where(isNull(events.deletedAt))
+    .groupBy(events.id)
     .orderBy(events.sourceType, events.venueName, events.condition);
   return rows;
+}
+
+// ---------------------------------------------------------------------------
+// Event cost items
+// ---------------------------------------------------------------------------
+
+export interface CostItemInput {
+  id?: string;
+  eventId: string;
+  description: string;
+  totalCost: number;
+  markupRate: number;
+  billingDate?: string;
+  note?: string;
+}
+
+export type CostItemWithAmounts = {
+  id: string;
+  eventId: string;
+  description: string;
+  totalCost: number;
+  markupRate: number;
+  billingDate: string | null;
+  note: string | null;
+  createdAt: Date;
+  markupAmount: number;
+  totalBilled: number;
+};
+
+export async function getEventCostItems(eventId: string): Promise<CostItemWithAmounts[]> {
+  const rows = await db
+    .select()
+    .from(eventCostItems)
+    .where(and(eq(eventCostItems.eventId, eventId), isNull(eventCostItems.deletedAt)))
+    .orderBy(eventCostItems.createdAt);
+
+  return rows.map((r) => {
+    const markup = Math.floor(r.totalCost * r.markupRate / 100);
+    return { ...r, markupAmount: markup, totalBilled: r.totalCost + markup };
+  });
+}
+
+export async function upsertEventCostItem(
+  input: CostItemInput,
+): Promise<{ success: boolean; error?: string; id?: string }> {
+  try {
+    const markup = Math.floor(input.totalCost * input.markupRate / 100);
+    const totalBilled = input.totalCost + markup;
+    const now = new Date();
+
+    if (input.id) {
+      await db
+        .update(eventCostItems)
+        .set({
+          description: input.description,
+          totalCost: input.totalCost,
+          markupRate: input.markupRate,
+          billingDate: input.billingDate || null,
+          note: input.note || null,
+          updatedAt: now,
+        })
+        .where(eq(eventCostItems.id, input.id));
+
+      await db
+        .update(eventCostSplits)
+        .set({ baseAmount: input.totalCost, markupAmount: markup, totalBilled, updatedAt: now })
+        .where(eq(eventCostSplits.costItemId, input.id));
+
+      revalidatePath('/events');
+      return { success: true, id: input.id };
+    }
+
+    const result = await db
+      .insert(eventCostItems)
+      .values({
+        eventId: input.eventId,
+        description: input.description,
+        totalCost: input.totalCost,
+        markupRate: input.markupRate,
+        billingDate: input.billingDate || null,
+        note: input.note || null,
+      })
+      .returning({ id: eventCostItems.id });
+
+    const newId = result[0]?.id;
+    if (!newId) return { success: false, error: '登録に失敗しました。' };
+
+    await db.insert(eventCostSplits).values({
+      costItemId: newId,
+      recipientName: '未定',
+      baseAmount: input.totalCost,
+      markupAmount: markup,
+      totalBilled,
+    });
+
+    revalidatePath('/events');
+    return { success: true, id: newId };
+  } catch (err) {
+    console.error('upsertEventCostItem error:', err);
+    return { success: false, error: '保存に失敗しました。' };
+  }
+}
+
+export async function deleteEventCostItem(
+  id: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await db.update(eventCostItems).set({ deletedAt: new Date() }).where(eq(eventCostItems.id, id));
+    revalidatePath('/events');
+    return { success: true };
+  } catch (err) {
+    console.error('deleteEventCostItem error:', err);
+    return { success: false, error: '削除に失敗しました。' };
+  }
 }
