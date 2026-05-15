@@ -6,26 +6,14 @@ export const metadata = {
   title: 'ログイン｜Looop CRM',
 };
 
-const LARK_ERRORS: Record<string, string> = {
-  lark_no_code: 'Lark 認証がキャンセルされました。再度お試しください。',
-  lark_config:  'Lark 設定が不完全です。管理者にお問い合わせください。',
-  lark_token:   'Lark からトークンを取得できませんでした。再度お試しください。',
-  lark_userinfo:'Lark からユーザー情報を取得できませんでした。再度お試しください。',
-  lark_no_email:'Lark アカウントのメールアドレスを取得できませんでした。',
-  lark_not_found:'登録されていないLarkアカウントです。管理者に確認してください。',
-  lark_error:   'Lark ログイン中にエラーが発生しました。再度お試しください。',
-};
-
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string }>;
 }) {
   const params = await searchParams;
   const user = await getCurrentUser();
   if (user) redirect(params.next || '/customers');
-
-  const larkError = params.error ? (LARK_ERRORS[params.error] ?? 'ログインに失敗しました。再度お試しください。') : null;
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-bg-subtle px-4 py-8">
@@ -47,7 +35,7 @@ export default async function LoginPage({
             Looop でんき催事販売事業の顧客管理システム
           </p>
           <div className="mt-5">
-            <LoginForm larkError={larkError} />
+            <LoginForm />
           </div>
         </div>
 

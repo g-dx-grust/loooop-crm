@@ -6,10 +6,9 @@ import { AlertCircle, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/cn';
 import { passwordLoginAction } from './actions';
 
-export function LoginForm({ larkError }: { larkError?: string | null }) {
+export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams?.get('next') || '/customers';
@@ -17,10 +16,10 @@ export function LoginForm({ larkError }: { larkError?: string | null }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(larkError ?? null);
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  function onSubmitPassword(e: React.FormEvent<HTMLFormElement>) {
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);
@@ -36,7 +35,7 @@ export function LoginForm({ larkError }: { larkError?: string | null }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {error ? (
         <div
           role="alert"
@@ -47,31 +46,7 @@ export function LoginForm({ larkError }: { larkError?: string | null }) {
         </div>
       ) : null}
 
-      {/* Lark SSO */}
-      <a
-        href={`/api/auth/lark${next !== '/customers' ? `?next=${encodeURIComponent(next)}` : ''}`}
-        className={cn(
-          'flex h-10 w-full items-center justify-center gap-2 rounded border border-border bg-white px-3 text-sm font-medium text-text-primary',
-          'transition-colors hover:bg-bg-subtle',
-          pending && 'pointer-events-none opacity-50',
-        )}
-      >
-        <LarkIcon className="size-4" />
-        <span>Lark でログイン</span>
-      </a>
-      <p className="-mt-3 text-xs text-text-tertiary">
-        Lark アカウントをお持ちの社内スタッフはこちら。
-      </p>
-
-      {/* Divider */}
-      <div className="flex items-center gap-3" aria-hidden>
-        <div className="h-px flex-1 bg-border" />
-        <span className="text-xs text-text-tertiary">または</span>
-        <div className="h-px flex-1 bg-border" />
-      </div>
-
-      {/* Email + Password */}
-      <form onSubmit={onSubmitPassword} className="space-y-4" noValidate>
+      <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <div className="space-y-1">
           <Label htmlFor="email" required>メールアドレス</Label>
           <div className="relative">
@@ -132,29 +107,8 @@ export function LoginForm({ larkError }: { larkError?: string | null }) {
       </form>
 
       <p className="text-xs leading-relaxed text-text-tertiary">
-        メールアドレスとパスワードが発行されている方はこちら。
-        アカウントは管理者が発行します。
+        アカウントはシステム管理者が発行します。
       </p>
     </div>
-  );
-}
-
-// Lark の "L" を控えめに表現したシンプルアイコン。
-// 商標ロゴは使わず、Lark のブランドカラー (#00D6B9) に近い色をワンポイントで。
-function LarkIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <rect width="16" height="16" rx="3" fill="#00D6B9" />
-      <path
-        d="M5 4.5C5 4.22 5.22 4 5.5 4H6.5C6.78 4 7 4.22 7 4.5V10H10.5C10.78 10 11 10.22 11 10.5V11.5C11 11.78 10.78 12 10.5 12H5.5C5.22 12 5 11.78 5 11.5V4.5Z"
-        fill="white"
-      />
-    </svg>
   );
 }
