@@ -10,6 +10,7 @@
     "studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit",
     "seed": "tsx src/run-seed.ts",
+    "delete-demo": "tsx src/run-delete-demo.ts",
     "db:reset": "rm -f ../../.local-db/looop.db ../../.local-db/looop.db-shm ../../.local-db/looop.db-wal && tsx src/run-seed.ts"
   },
   "dependencies": {
