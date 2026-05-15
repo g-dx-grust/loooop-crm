@@ -1,7 +1,94 @@
-# CLAUDE.md ─ Looop CRM ルールブック
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 このファイルは、本リポジトリで Claude（および人間の開発者）が UI / UX / コードを書くときに**最優先で遵守する規約**です。
 要件定義は [指示書.md](指示書.md) と [docs/](docs/) を参照。本ファイルは「**どう作るか**」を定義します。
+
+---
+
+## A. 開発コマンド
+
+パッケージマネージャは **pnpm**。Node.js 22 以上が必要。
+
+```bash
+# 開発サーバー起動（apps/web）
+pnpm dev
+
+# ビルド
+pnpm build
+
+# 型チェック（全パッケージ）
+pnpm typecheck
+
+# Lint（全パッケージ）
+pnpm lint
+
+# DB マイグレーション実行
+pnpm db:migrate          # packages/db/.env の DATABASE_URL を使用
+
+# DB スキーマ変更後にマイグレーションファイルを生成
+pnpm db:generate
+
+# DB スタジオ（Drizzle Studio）
+pnpm db:studio
+
+# シードデータ投入
+pnpm seed
+
+# デモデータ削除（本番DB向け）
+pnpm --filter @looop/db delete-demo
+```
+
+`packages/db/.env` に `DATABASE_URL` を設定すること（`.env.example` 参照）。
+
+---
+
+## B. コードアーキテクチャ
+
+### モノレポ構成
+
+```
+apps/web/          Next.js 15 App Router (メインアプリ)
+packages/auth/     Cookie セッション認証（Lark SSO + パスワード）
+packages/db/       Drizzle ORM + Postgres スキーマ・マイグレーション
+packages/permissions/  RBAC ヘルパー（role → permission マッピング）
+packages/audit/    監査ログ書き込みユーティリティ
+packages/ui/       共有 UI コンポーネント（shadcn ベース・カスタマイズ済み）
+```
+
+### Next.js ルートグループ
+
+- `(admin)/` — 管理画面。`layout.tsx` で `getCurrentUser()` → 未ログインなら `/login` リダイレクト。Sidebar + permission チェックを内包。
+- `(mobile)/intake/` — 催事現場向け顧客登録フォーム。PC レイアウトなし・モバイル最適化。
+- `api/` — `auth/lark/`, `auth/callback/`, `geocode/`, `ai/` など REST エンドポイント。
+
+### データ層のパターン
+
+各管理画面は **Server Components** + 以下のファイル分割：
+- `queries.ts` — `db.select().from(...)` の読み取り関数（Server Component から呼ぶ）
+- `actions.ts` — `'use server'` の書き込み関数（form action / Server Action）
+- `page.tsx` — Server Component（データ取得してクライアントコンポーネントへ渡す）
+- `*-client.tsx` / `*-table.tsx` — `'use client'` で状態・インタラクションを持つ部分
+
+### 認証・権限
+
+`packages/auth` の `getCurrentUser()` はセッション Cookie から `SessionUser`（id, email, roleCodes）を返す。
+
+ロール: `admin`（管理者）/ `field`（現場スタッフ）の 2 種類のみ。
+`packages/permissions` の `ROLE_PERMISSIONS` でロール → パーミッション配列を定義。
+`AdminLayout` が `allowedPerms` を `Sidebar` に渡し、ナビ表示を制御。
+
+### DB クライアント
+
+`packages/db/src/index.ts` が Proxy ラッパーで `db` をエクスポート。
+`drizzle-orm` ヘルパー（`eq`, `and`, `isNull` 等）も同パッケージから再エクスポートされているため、`@looop/db` からまとめて import する。
+
+### 個人情報の暗号化
+
+電話番号・メールは `bytea` 型 (`phone_enc`, `email_enc`) で保存。デコードはサーバーサイドのみ。`phone_hash` は重複チェック用。`PII_PEPPER` env var を使ってハッシュに salt を加える。
+
+---
 
 ---
 

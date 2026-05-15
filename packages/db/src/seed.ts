@@ -45,6 +45,7 @@ export async function seed() {
   // ---------------------------------------------------------------------------
   const roleData = [
     { id: uid('role-admin'), code: 'admin', name: '管理者' },
+    { id: uid('role-agency-admin'), code: 'agency_admin', name: '代理店管理者' },
     { id: uid('role-field'), code: 'field', name: '現場スタッフ' },
   ];
 
@@ -55,7 +56,7 @@ export async function seed() {
       ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
     `);
   }
-  console.log('  ✓ roles (admin / field)');
+  console.log('  ✓ roles (admin / agency_admin / field)');
 
   // ---------------------------------------------------------------------------
   // Staff users (デモ用)

@@ -7,5 +7,9 @@ export default async function IntakePage() {
     getActiveEvents(),
     getLatestConsentText(),
   ]);
-  return <IntakeWizard events={events} consentText={consentText} />;
+  return (
+    <div className="mx-auto w-full max-w-2xl px-4 py-4">
+      <IntakeWizard events={events} consentText={consentText} />
+    </div>
+  );
 }

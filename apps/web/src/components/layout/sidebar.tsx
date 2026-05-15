@@ -28,17 +28,13 @@ type NavSection = {
 
 const NAV_SECTIONS: NavSection[] = [
   {
-    items: [
-      { href: '/intake', label: '新規登録フォーム', icon: ClipboardList, perm: 'nav.intake' },
-    ],
-  },
-  {
     label: '顧客・申込',
     items: [
-      { href: '/customers',     label: '顧客',       icon: Users,   perm: 'nav.customers' },
-      { href: '/looop',         label: 'Looop申込',  icon: Zap,     perm: 'nav.looop' },
-      { href: '/bills',         label: '明細',       icon: Receipt, perm: 'nav.bills' },
-      { href: '/refunds',       label: '返還対象',   icon: Undo2,   perm: 'nav.refunds' },
+      { href: '/intake',        label: '新規登録フォーム', icon: ClipboardList, perm: 'nav.intake' },
+      { href: '/customers',     label: '顧客',             icon: Users,         perm: 'nav.customers' },
+      { href: '/looop',         label: 'Looop申込',        icon: Zap,           perm: 'nav.looop' },
+      { href: '/bills',         label: '明細',             icon: Receipt,       perm: 'nav.bills' },
+      { href: '/refunds',       label: '返還対象',         icon: Undo2,         perm: 'nav.refunds' },
     ],
   },
   {

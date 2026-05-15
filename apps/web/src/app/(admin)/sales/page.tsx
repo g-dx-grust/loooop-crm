@@ -9,6 +9,7 @@ import {
   getPaymentMethodBreakdown,
   getKwhTierBreakdown,
 } from './queries';
+import { getCurrentUser } from '@looop/auth';
 
 interface PageProps {
   searchParams: Promise<{ month?: string }>;
@@ -19,13 +20,15 @@ function fmt(n: number): string {
 }
 
 export default async function SalesPage({ searchParams }: PageProps) {
-  const params = await searchParams;
+  const [params, currentUser] = await Promise.all([searchParams, getCurrentUser()]);
   const month = params.month || undefined;
+  const isAgencyAdmin = currentUser?.roleCodes.includes('agency_admin') ?? false;
+  const agencyId = isAgencyAdmin ? (currentUser?.agencyId ?? undefined) : undefined;
 
   const [monthlyApps, monthlyRev, staff, byMethod, byKwh] = await Promise.all([
-    getMonthlyApplicationCounts(6),
-    getMonthlyRevenue(6),
-    getStaffSales(month),
+    getMonthlyApplicationCounts(6, agencyId),
+    getMonthlyRevenue(6, agencyId),
+    getStaffSales(month, agencyId),
     getPaymentMethodBreakdown(month),
     getKwhTierBreakdown(month),
   ]);

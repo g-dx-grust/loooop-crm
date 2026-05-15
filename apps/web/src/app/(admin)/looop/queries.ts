@@ -19,13 +19,19 @@ export interface StaffOption {
   displayName: string;
 }
 
-export async function getLooopStaffOptions(): Promise<StaffOption[]> {
+export async function getLooopStaffOptions(agencyId?: string): Promise<StaffOption[]> {
   const rows = await db
     .selectDistinct({ id: users.id, displayName: users.displayName })
     .from(users)
     .innerJoin(leads, eq(leads.staffId, users.id))
     .innerJoin(looopContracts, eq(looopContracts.leadId, leads.id))
-    .where(and(isNull(looopContracts.deletedAt), isNotNull(leads.staffId)))
+    .where(
+      and(
+        isNull(looopContracts.deletedAt),
+        isNotNull(leads.staffId),
+        agencyId ? eq(users.teamId, agencyId) : undefined,
+      ),
+    )
     .orderBy(users.displayName);
   return rows.map((r) => ({ id: r.id, displayName: r.displayName }));
 }
@@ -33,6 +39,7 @@ export async function getLooopStaffOptions(): Promise<StaffOption[]> {
 export interface LooopContractFilters {
   status?: string;
   staffId?: string;
+  agencyId?: string;
 }
 
 export interface LooopContractListItem {
@@ -83,6 +90,7 @@ export async function getLooopContracts(filters: LooopContractFilters): Promise<
         isNull(looopContracts.deletedAt),
         filters.status ? eq(looopContracts.status, filters.status) : undefined,
         filters.staffId ? eq(leads.staffId, filters.staffId) : undefined,
+        filters.agencyId ? eq(users.teamId, filters.agencyId) : undefined,
       ),
     )
     .orderBy(desc(looopContracts.updatedAt));
@@ -101,7 +109,7 @@ export async function getLooopContracts(filters: LooopContractFilters): Promise<
   }));
 }
 
-export async function getLooopSummary(): Promise<LooopSummary> {
+export async function getLooopSummary(agencyId?: string): Promise<LooopSummary> {
   const ym = currentYearMonth();
 
   // today's year/month as start date for filtering
@@ -115,7 +123,14 @@ export async function getLooopSummary(): Promise<LooopSummary> {
       unitPrice: looopContracts.unitPrice,
     })
     .from(looopContracts)
-    .where(isNull(looopContracts.deletedAt));
+    .leftJoin(leads, eq(looopContracts.leadId, leads.id))
+    .leftJoin(users, eq(leads.staffId, users.id))
+    .where(
+      and(
+        isNull(looopContracts.deletedAt),
+        agencyId ? eq(users.teamId, agencyId) : undefined,
+      ),
+    );
 
   let thisMonthApplications = 0;
   let thisMonthOpened = 0;

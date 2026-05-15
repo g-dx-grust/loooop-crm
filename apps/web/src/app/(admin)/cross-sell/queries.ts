@@ -6,6 +6,7 @@ export interface CrossSellFilters {
   interestRank?: string;
   overdue?: boolean;
   staffId?: string;
+  agencyId?: string;
 }
 
 export interface CrossSellListItem {
@@ -80,6 +81,7 @@ export async function getCrossSellOpportunities(
           ? eq(crossSellOpportunities.interestRank, filters.interestRank)
           : undefined,
         filters.staffId ? eq(leads.staffId, filters.staffId) : undefined,
+        filters.agencyId ? eq(users.teamId, filters.agencyId) : undefined,
       ),
     )
     .orderBy(desc(crossSellOpportunities.updatedAt));
@@ -123,30 +125,52 @@ export interface CrossSellStaffOption {
   displayName: string;
 }
 
-export async function getCrossSellStaffOptions(): Promise<CrossSellStaffOption[]> {
+export async function getCrossSellStaffOptions(agencyId?: string): Promise<CrossSellStaffOption[]> {
   const rows = await db
     .selectDistinct({ id: users.id, displayName: users.displayName })
     .from(users)
     .innerJoin(leads, eq(leads.staffId, users.id))
     .innerJoin(customers, eq(customers.id, leads.customerId))
     .innerJoin(crossSellOpportunities, eq(crossSellOpportunities.customerId, customers.id))
-    .where(and(isNull(crossSellOpportunities.deletedAt), isNotNull(leads.staffId)))
+    .where(
+      and(
+        isNull(crossSellOpportunities.deletedAt),
+        isNotNull(leads.staffId),
+        agencyId ? eq(users.teamId, agencyId) : undefined,
+      ),
+    )
     .orderBy(users.displayName);
   return rows.map((r) => ({ id: r.id, displayName: r.displayName }));
 }
 
-export async function getCrossSellSummary(): Promise<CrossSellSummary> {
+export async function getCrossSellSummary(agencyId?: string): Promise<CrossSellSummary> {
   const ym = currentYearMonth();
 
-  const all = await db
+  const rawRows = await db
     .select({
+      id: crossSellOpportunities.id,
       status: crossSellOpportunities.status,
       actualRevenue: crossSellOpportunities.actualRevenue,
       updatedAt: crossSellOpportunities.updatedAt,
       nextActionDate: crossSellOpportunities.nextActionDate,
     })
     .from(crossSellOpportunities)
-    .where(isNull(crossSellOpportunities.deletedAt));
+    .leftJoin(customers, eq(crossSellOpportunities.customerId, customers.id))
+    .leftJoin(leads, eq(customers.id, leads.customerId))
+    .leftJoin(users, eq(leads.staffId, users.id))
+    .where(
+      and(
+        isNull(crossSellOpportunities.deletedAt),
+        agencyId ? eq(users.teamId, agencyId) : undefined,
+      ),
+    );
+
+  const seen = new Set<string>();
+  const all = rawRows.filter((r) => {
+    if (seen.has(r.id)) return false;
+    seen.add(r.id);
+    return true;
+  });
 
   let totalWon = 0;
   let thisMonthWon = 0;

@@ -17,6 +17,9 @@ interface PageProps {
 export default async function LooopPage({ searchParams }: PageProps) {
   const [params, currentUser] = await Promise.all([searchParams, getCurrentUser()]);
   const isField = currentUser?.roleCodes.includes('field') ?? false;
+  const isAgencyAdmin = currentUser?.roleCodes.includes('agency_admin') ?? false;
+  const isAdmin = !isField && !isAgencyAdmin;
+  const agencyId = isAgencyAdmin ? (currentUser?.agencyId ?? undefined) : undefined;
   const statusFilter = params.status ?? '';
   const staffIdParam = isField ? (currentUser?.id ?? '') : (params.staffId ?? '');
 
@@ -24,10 +27,11 @@ export default async function LooopPage({ searchParams }: PageProps) {
     getLooopContracts({
       status: statusFilter || undefined,
       staffId: staffIdParam || undefined,
+      agencyId,
     }),
-    getLooopSummary(),
+    getLooopSummary(agencyId),
     getLooopCustomerOptions(),
-    isField ? Promise.resolve([]) : getLooopStaffOptions(),
+    (isField) ? Promise.resolve([]) : getLooopStaffOptions(agencyId),
   ]);
 
   return (
@@ -63,7 +67,7 @@ export default async function LooopPage({ searchParams }: PageProps) {
         <Suspense>
           <LooopStatusTabs />
         </Suspense>
-        {!isField && staffOptions.length > 0 && (
+        {(isAdmin || isAgencyAdmin) && staffOptions.length > 0 && (
           <Suspense>
             <LooopStaffFilter staffOptions={staffOptions} currentStaffId={staffIdParam} />
           </Suspense>

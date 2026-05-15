@@ -294,11 +294,8 @@ function Step1({
         />
         <div className="min-w-0">
           <label htmlFor="is-telema" className="block text-sm font-medium text-text-primary cursor-pointer">
-            テレマ獲得
+            テレマコード獲得
           </label>
-          <p className="mt-0.5 text-xs text-text-tertiary">
-            電話マーケティング経由の申込。チェック時は売上23,000円固定・催事会場不要。
-          </p>
         </div>
       </div>
     </div>
@@ -322,11 +319,6 @@ function Step3({
   const isTelema = form.isTelemarketingAcquisition;
   return (
     <div className="space-y-4">
-      {isTelema && (
-        <div className="rounded border border-border bg-bg-subtle px-3 py-2 text-xs text-text-secondary">
-          テレマ獲得のため売上は<strong className="font-semibold text-text-primary">23,000円固定</strong>で計算されます。催事会場の選択は不要です。
-        </div>
-      )}
       <div>
         <FieldLabel htmlFor="monthly-bill" required>
           月間の電気料金

@@ -22,7 +22,9 @@ interface PageProps {
 export default async function CrossSellPage({ searchParams }: PageProps) {
   const [params, currentUser] = await Promise.all([searchParams, getCurrentUser()]);
   const isField = currentUser?.roleCodes.includes('field') ?? false;
-  const isAdmin = !isField;
+  const isAgencyAdmin = currentUser?.roleCodes.includes('agency_admin') ?? false;
+  const isAdmin = !isField && !isAgencyAdmin;
+  const agencyId = isAgencyAdmin ? (currentUser?.agencyId ?? undefined) : undefined;
   const staffIdParam = isField ? (currentUser?.id ?? '') : (params.staffId ?? '');
 
   const [items, summary, staffOptions] = await Promise.all([
@@ -32,17 +34,18 @@ export default async function CrossSellPage({ searchParams }: PageProps) {
       interestRank: params.interestRank,
       overdue: params.overdue === '1',
       staffId: staffIdParam || undefined,
+      agencyId,
     }),
-    isAdmin ? getCrossSellSummary() : Promise.resolve(null),
-    isAdmin ? getCrossSellStaffOptions() : Promise.resolve([]),
+    (isAdmin || isAgencyAdmin) ? getCrossSellSummary(agencyId) : Promise.resolve(null),
+    (isAdmin || isAgencyAdmin) ? getCrossSellStaffOptions(agencyId) : Promise.resolve([]),
   ]);
 
   return (
     <>
       <PageHeader title="クロスセル" />
 
-      {/* Summary cards — admin only */}
-      {isAdmin && summary && (
+      {/* Summary cards — admin / agency_admin */}
+      {(isAdmin || isAgencyAdmin) && summary && (
         <div className="grid grid-cols-2 gap-3 p-4 pb-0 lg:grid-cols-4 lg:gap-4 lg:p-6 lg:pb-0">
           <Card className="p-3 lg:p-5">
             <div className="text-xs text-text-tertiary">成約件数（累計）</div>
@@ -91,7 +94,7 @@ export default async function CrossSellPage({ searchParams }: PageProps) {
         <Suspense>
           <CrossSellFilters />
         </Suspense>
-        {isAdmin && staffOptions.length > 0 && (
+        {(isAdmin || isAgencyAdmin) && staffOptions.length > 0 && (
           <Suspense>
             <CrossSellStaffFilter staffOptions={staffOptions} currentStaffId={staffIdParam} />
           </Suspense>

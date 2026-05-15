@@ -17,6 +17,7 @@ import {
   desc,
   sql,
 } from '@looop/db';
+import { getCurrentUser } from '@looop/auth';
 import type { AddressFormValues } from '@/components/address/address-form';
 import type { ConsentValues } from '@/components/consent/consent-checkboxes';
 
@@ -105,6 +106,9 @@ export async function createCustomer(
   void redirect;
 
   try {
+    const currentUser = await getCurrentUser();
+    const staffUserId = currentUser?.id ?? null;
+
     // Generate a short display ID
     const displayId = `C${Date.now().toString(36).toUpperCase()}`;
     const phoneClean = normalizeDigits(input.phone);
@@ -205,7 +209,7 @@ export async function createCustomer(
           phoneHash: Buffer.from(phoneClean) as unknown as Buffer,
           birthDate: input.birthDate || null,
           emailEnc: email ? (Buffer.from(email) as unknown as Buffer) : null,
-          createdBy: null,
+          createdBy: staffUserId,
         })
         .returning({ id: customers.id });
 
@@ -251,7 +255,7 @@ export async function createCustomer(
         .values({
           customerId: custId,
           eventId: input.eventId || null,
-          staffId: null,
+          staffId: staffUserId,
           leadStatus: 'new',
           source: isTelema ? 'telema' : 'event',
         })
@@ -260,7 +264,7 @@ export async function createCustomer(
       const leadId = leadInsert[0]?.id ?? null;
 
       // 4. Insert looop_contract
-      // テレマ獲得時は売上 23,000 円固定、季節指数・催事単価計算なし
+      // テレマコード獲得時は売上 23,000 円固定、季節指数・催事単価計算なし
       const unitPrice = isTelema ? 23000 : 30000;
       await tx.insert(looopContracts).values({
         customerId: custId,
@@ -283,7 +287,7 @@ export async function createCustomer(
         consentStatus: input.consent.personalInfoConsent ? 'granted' : 'withdrawn',
         consentTextVersion: consentText.version,
         consentedAt: now,
-        consentedBy: null,
+        consentedBy: staffUserId,
       });
 
       await tx.insert(consents).values({
@@ -292,7 +296,7 @@ export async function createCustomer(
         consentStatus: 'granted',
         consentTextVersion: consentText.version,
         consentedAt: now,
-        consentedBy: null,
+        consentedBy: staffUserId,
       });
 
       // 6. Audit log
@@ -300,6 +304,7 @@ export async function createCustomer(
         action: 'customer.create',
         resourceType: 'customer',
         resourceId: custId,
+        actorUserId: staffUserId ?? undefined,
         diff: { displayId, name: input.name },
       });
 

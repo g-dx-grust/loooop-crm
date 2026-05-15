@@ -30,6 +30,7 @@ export interface SessionUser {
   email: string;
   roleCodes: RoleCode[];
   authProvider: 'lark' | 'password';
+  agencyId: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -121,6 +122,7 @@ async function loadUser(userId: string): Promise<SessionUser | null> {
     email: u.email,
     roleCodes: linked.map((r) => r.code as RoleCode),
     authProvider: (u.authProvider === 'lark' ? 'lark' : 'password'),
+    agencyId: u.teamId ?? null,
   };
 }
 

@@ -26,7 +26,7 @@ export interface MonthlyApplicationRow {
   cancelled: number;
 }
 
-export async function getMonthlyApplicationCounts(months = 6): Promise<MonthlyApplicationRow[]> {
+export async function getMonthlyApplicationCounts(months = 6, agencyId?: string): Promise<MonthlyApplicationRow[]> {
   const rows = await db
     .select({
       status: looopContracts.status,
@@ -36,7 +36,14 @@ export async function getMonthlyApplicationCounts(months = 6): Promise<MonthlyAp
       cancelDate: looopContracts.cancelDate,
     })
     .from(looopContracts)
-    .where(isNull(looopContracts.deletedAt));
+    .innerJoin(customers, eq(looopContracts.customerId, customers.id))
+    .leftJoin(users, eq(customers.createdBy, users.id))
+    .where(
+      and(
+        isNull(looopContracts.deletedAt),
+        agencyId ? eq(users.teamId, agencyId) : undefined,
+      ),
+    );
 
   const now = new Date();
   const monthsList: string[] = [];
@@ -85,7 +92,7 @@ export interface MonthlyRevenueRow {
   refundAmount: number;
 }
 
-export async function getMonthlyRevenue(months = 6): Promise<MonthlyRevenueRow[]> {
+export async function getMonthlyRevenue(months = 6, agencyId?: string): Promise<MonthlyRevenueRow[]> {
   const billRows = await db
     .select({
       month: electricityBills.billMonth,
@@ -94,7 +101,14 @@ export async function getMonthlyRevenue(months = 6): Promise<MonthlyRevenueRow[]
       net: sql<number>`coalesce(sum(${electricityBills.netFee}), 0)`,
     })
     .from(electricityBills)
-    .where(isNull(electricityBills.deletedAt))
+    .innerJoin(customers, eq(electricityBills.customerId, customers.id))
+    .leftJoin(users, eq(customers.createdBy, users.id))
+    .where(
+      and(
+        isNull(electricityBills.deletedAt),
+        agencyId ? eq(users.teamId, agencyId) : undefined,
+      ),
+    )
     .groupBy(electricityBills.billMonth);
 
   const refundRows = await db
@@ -104,7 +118,14 @@ export async function getMonthlyRevenue(months = 6): Promise<MonthlyRevenueRow[]
       amount: sql<number>`coalesce(sum(${refunds.refundAmount}), 0)`,
     })
     .from(refunds)
-    .where(isNull(refunds.deletedAt))
+    .innerJoin(customers, eq(refunds.customerId, customers.id))
+    .leftJoin(users, eq(customers.createdBy, users.id))
+    .where(
+      and(
+        isNull(refunds.deletedAt),
+        agencyId ? eq(users.teamId, agencyId) : undefined,
+      ),
+    )
     .groupBy(refunds.refundMonth);
 
   const now = new Date();
@@ -159,7 +180,7 @@ export interface StaffSalesRow {
   totalRevenue: number;
 }
 
-export async function getStaffSales(month?: string): Promise<StaffSalesRow[]> {
+export async function getStaffSales(month?: string, agencyId?: string): Promise<StaffSalesRow[]> {
   // Customer base count by staff
   const customersByStaff = await db
     .select({
@@ -169,7 +190,12 @@ export async function getStaffSales(month?: string): Promise<StaffSalesRow[]> {
     })
     .from(customers)
     .leftJoin(users, eq(customers.createdBy, users.id))
-    .where(isNull(customers.deletedAt))
+    .where(
+      and(
+        isNull(customers.deletedAt),
+        agencyId ? eq(users.teamId, agencyId) : undefined,
+      ),
+    )
     .groupBy(customers.createdBy, users.displayName);
 
   // Applications / opened / cancelled / paid / unbilled by staff
@@ -185,7 +211,14 @@ export async function getStaffSales(month?: string): Promise<StaffSalesRow[]> {
     })
     .from(looopContracts)
     .innerJoin(customers, eq(looopContracts.customerId, customers.id))
-    .where(and(isNull(looopContracts.deletedAt), isNull(customers.deletedAt)))
+    .leftJoin(users, eq(customers.createdBy, users.id))
+    .where(
+      and(
+        isNull(looopContracts.deletedAt),
+        isNull(customers.deletedAt),
+        agencyId ? eq(users.teamId, agencyId) : undefined,
+      ),
+    )
     .groupBy(customers.createdBy);
 
   // Looop electricity bill revenue by staff
@@ -198,10 +231,12 @@ export async function getStaffSales(month?: string): Promise<StaffSalesRow[]> {
     })
     .from(electricityBills)
     .innerJoin(customers, eq(electricityBills.customerId, customers.id))
+    .leftJoin(users, eq(customers.createdBy, users.id))
     .where(
       and(
         isNull(electricityBills.deletedAt),
         month ? eq(electricityBills.billMonth, month) : undefined,
+        agencyId ? eq(users.teamId, agencyId) : undefined,
       ),
     )
     .groupBy(customers.createdBy);
@@ -214,11 +249,13 @@ export async function getStaffSales(month?: string): Promise<StaffSalesRow[]> {
     })
     .from(crossSellOpportunities)
     .innerJoin(customers, eq(crossSellOpportunities.customerId, customers.id))
+    .leftJoin(users, eq(customers.createdBy, users.id))
     .where(
       and(
         isNull(crossSellOpportunities.deletedAt),
         isNull(customers.deletedAt),
         eq(crossSellOpportunities.status, 'won'),
+        agencyId ? eq(users.teamId, agencyId) : undefined,
       ),
     )
     .groupBy(customers.createdBy);

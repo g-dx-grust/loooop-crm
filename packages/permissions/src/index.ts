@@ -3,7 +3,7 @@
  * role -> permission のマップを定義し、現在のユーザの role から判定する。
  * docs/03_auth_rbac.md と一致させる。
  *
- * ロール種別: admin（管理者）/ field（現場スタッフ）の2種類のみ。
+ * ロール種別: admin（全体管理者）/ agency_admin（代理店管理者）/ field（現場スタッフ）
  */
 
 import { requireUser, type SessionUser } from '@looop/auth';
@@ -63,6 +63,17 @@ const ALL_PERMS: Permission[] = [
 
 export const ROLE_PERMISSIONS: Record<RoleCode, Permission[]> = {
   admin: ALL_PERMS,
+  agency_admin: [
+    'customer.read.all',
+    'customer.write.all',
+    'consent.grant',
+    'consent.withdraw',
+    'nav.intake',
+    'nav.customers',
+    'nav.looop',
+    'nav.cross_sell',
+    'nav.sales',
+  ],
   field: [
     'customer.read.own',
     'customer.write.own',
@@ -76,6 +87,7 @@ export const ROLE_PERMISSIONS: Record<RoleCode, Permission[]> = {
 
 export const ROLE_LABELS: Record<RoleCode, string> = {
   admin: '管理者',
+  agency_admin: '代理店管理者',
   field: '現場スタッフ',
 };
 
